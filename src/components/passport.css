@@ -63,8 +63,11 @@
 
 /* Identity */
 .id-grid { display: grid; grid-template-columns: 34% 1fr; gap: 12px; margin-top: 4px; }
-.id-photo { aspect-ratio: 3/4; border: 1.5px dashed #CDBB91; border-radius: 6px; display: grid; place-items: center; background: #FBF7EE88; }
-.id-photo img { width: 60%; opacity: .9; }
+.id-photo { position: relative; aspect-ratio: 3/4; border: 1.5px dashed #CDBB91; border-radius: 6px; display: grid; place-items: center; background: #FBF7EE88; padding: 0; overflow: hidden; cursor: pointer; font: inherit; color: inherit; }
+.id-photo.has { border: 3px solid #fff; box-shadow: 0 1px 3px #0003; }
+.id-photo .face { width: 100%; height: 100%; object-fit: cover; filter: sepia(.12) contrast(1.02); }
+.add-photo { font: 600 9px/1.4 var(--body); letter-spacing: .12em; text-transform: uppercase; color: #8E7F5C; text-align: center; }
+.id-photo .change { position: absolute; bottom: 0; left: 0; right: 0; background: #123A2CCC; color: #F4ECD9; font: 600 8px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; padding: 5px 0; }
 .fields, .race { margin: 0; }
 .fields dt, .race dt { font: 600 7px/1 var(--body); letter-spacing: .2em; text-transform: uppercase; color: #6D6A58; margin-top: 7px; }
 .fields dd, .race dd { margin: 2px 0 0; min-height: 15px; border-bottom: 1px solid #CDBB91; font: 600 12px/1.3 var(--body); color: #1F3B30; padding-bottom: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -78,9 +81,14 @@
 
 /* Journey */
 .journey { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 4px; }
-.jr { display: grid; grid-template-columns: 22px 1fr 22px; align-items: center; padding: 5px 2px; border-bottom: 1px dashed #D9C9A3; font-size: 12.5px; }
+.jr { display: grid; grid-template-columns: 22px 1fr auto 22px; gap: 0 6px; align-items: center; padding: 5px 2px; width: 100%; background: none; border: 0; border-bottom: 1px dashed #D9C9A3; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 0; border-bottom: 1px dashed #D9C9A3; font-size: 12.5px; }
 .jr-no { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #F5911D; color: #B4501A; font: 700 9px/15px var(--body); text-align: center; }
-.jr-name { font-weight: 600; padding-left: 6px; }
+.jr-name { font-weight: 600; font-size: 12.5px; }
+.jr-act { font: 600 9px/1 var(--body); letter-spacing: .04em; color: #B4501A; }
+.jr.ok .jr-act { color: var(--ink); }
+.jr.wait .jr-act { color: #9A6A12; }
+.jr:disabled { cursor: default; }
+.jr:not(:disabled):active { background: #E9DCBD66; }
 .jr-box { width: 18px; height: 18px; border: 1.5px solid #8E7F5C; border-radius: 3px; text-align: center; font: 700 13px/15px var(--body); }
 .jr.ok .jr-no { background: var(--ink); border-color: var(--ink); color: #fff; }
 .jr.ok .jr-name { color: var(--ink); }
@@ -105,7 +113,26 @@
 .stamp-box.has { border-color: transparent; background: transparent; }
 .stamp-box.big { width: 62%; aspect-ratio: 1; margin: 6px auto 4px; }
 .box-note { font: italic 500 13px/1.2 "Cormorant Garamond", Georgia, serif; color: #8E7F5C; text-align: center; position: relative; z-index: 1; }
-.box-note.link { color: #B4501A; text-decoration: none; font-weight: 600; }
+.box-note.link { color: #8E7F5C; background: none; border: 0; cursor: pointer; font-size: 12px; }
+.box-note.link b { display: inline-block; margin-top: 6px; font: 700 9px/1 var(--body); letter-spacing: .08em; color: #B4501A; }
+.box-note.faint { font: 700 22px/1 var(--display); color: #E3D6B5; font-style: normal; }
+.ink.pending { opacity: .38; filter: grayscale(.35); }
+.ribbon { position: absolute; top: 42%; left: -4%; right: -4%; text-align: center; background: #9A6A12E6; color: #fff; font: 700 8px/1 var(--body); letter-spacing: .24em; padding: 5px 0; transform: rotate(-8deg); box-shadow: 0 1px 2px #0003; }
+.medal { position: absolute; right: -10px; bottom: -8px; width: 40%; aspect-ratio: 1; padding: 3px 3px 9px; background: #fff; border: 0; box-shadow: 0 2px 6px #0004; transform: rotate(7deg); cursor: pointer; z-index: 2; }
+.medal img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.medal.add { background: #FBF7EE; border: 1.5px dashed #CDBB91; box-shadow: none; padding: 0; font: 600 7px/1.3 var(--body); letter-spacing: .1em; text-transform: uppercase; color: #8E7F5C; transform: rotate(4deg); }
+/* Result sheet + photo viewer */
+.sheet-wrap { position: fixed; inset: 0; background: #0B241B99; z-index: 50; display: flex; align-items: flex-end; justify-content: center; animation: fade .2s; }
+.sheet { background: var(--paper); width: 100%; max-width: 560px; max-height: 92dvh; overflow-y: auto; border-radius: 18px 18px 0 0; padding: 14px 18px calc(22px + env(safe-area-inset-bottom)); animation: rise .28s cubic-bezier(.2,.8,.2,1); }
+.sheet-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.sheet-head img { width: 64px; }
+.sheet-head small { font: 600 9px/1 var(--body); letter-spacing: .2em; color: var(--orange-ink); }
+.sheet-head h2 { margin: 2px 0 0; }
+.sheet-head .x { margin-left: auto; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--rule); background: none; font-size: 22px; cursor: pointer; color: var(--ink); }
+.sheet-wrap.viewer { align-items: center; padding: 20px; }
+.sheet-wrap.viewer img { max-width: 100%; max-height: 85dvh; border: 6px solid #fff; border-bottom-width: 24px; box-shadow: 0 8px 30px #0006; }
+@keyframes rise { from { transform: translateY(40px); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
 .race dt { margin-top: 4px; }
 .race dd { font-size: 10.5px; min-height: 13px; }
 .race .ticks { display: flex; gap: 8px; border: 0; font-size: 9.5px; }

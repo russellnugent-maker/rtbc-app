@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../App.jsx'
 import { supabase } from '../lib/supabase.js'
@@ -47,19 +47,21 @@ function PendingPayment() {
 }
 
 function Passport({ passport }) {
+  const { reload } = useApp()
   const [subs, setSubs] = useState(null)
-  useEffect(() => {
+  const load = useCallback(() => {
     supabase.from('rtbc_submissions')
-      .select('id, province, status, race_name, race_date, distance_m, finish_seconds, created_at, rc_events(venue_town)')
-      .eq('passport_id', passport.id).order('created_at', { ascending: false })
+      .select('id, province, status, race_name, race_date, distance_m, finish_seconds, created_at, medal_photo_path, rc_events(venue_town)')
+      .eq('passport_id', passport.id).order('created_at', { ascending: true })
       .then(({ data }) => setSubs(data || []))
   }, [passport.id])
+  useEffect(() => { load() }, [load])
 
   if (subs === null) return <div className="spinner" />
   return (
     <>
       {passport.status === 'expired' && <div className="error">This passport has expired. Contact support@energylabapp.co.za about an extension.</div>}
-      <PassportBook passport={passport} subs={subs} />
+      <PassportBook passport={passport} subs={subs} onChanged={() => { load(); reload() }} />
       {passport.status === 'active' && (
         <Link className="btn block" to="/submit" style={{ marginTop: 10 }}>Add a race result</Link>
       )}

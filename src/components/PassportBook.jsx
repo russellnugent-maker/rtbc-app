@@ -1,84 +1,104 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useApp } from '../App.jsx'
+import { supabase } from '../lib/supabase.js'
+import { uploadPhoto, photoUrl } from '../lib/photos.js'
 import { PROVINCES, stampUrl, passportNo, fmtDate, fmtTime } from '../lib/provinces.js'
+import ResultForm from './ResultForm.jsx'
 import './passport.css'
 
 const BASE = import.meta.env.BASE_URL
-// Slight, fixed tilt per province so stamps look hand-pressed but never jump around
+const PROV = Object.fromEntries(PROVINCES.map((p) => [p.name, p]))
 const TILT = [-4, 3, -2, 5, -3, 2, -5, 4, -1]
+const FIRST_STAMP_PAGE = 3
+const pageOfSlot = (k) => FIRST_STAMP_PAGE + Math.floor(k / 2)
 
-const seenKey = (pid, prov) => `rtbc_stamped_${pid}_${prov}`
-const wasSeen = (pid, prov) => { try { return localStorage.getItem(seenKey(pid, prov)) === '1' } catch { return true } }
-const markSeen = (pid, prov) => { try { localStorage.setItem(seenKey(pid, prov), '1') } catch { /* ignore */ } }
+const isOk = (s) => ['approved', 'auto_approved'].includes(s?.status)
+const isWait = (s) => ['pending', 'flagged'].includes(s?.status)
+const seenKey = (pid, key) => `rtbc_stamped_${pid}_${key}`
+const wasSeen = (pid, key) => { try { return localStorage.getItem(seenKey(pid, key)) === '1' } catch { return true } }
+const markSeen = (pid, key) => { try { localStorage.setItem(seenKey(pid, key), '1') } catch { /* ignore */ } }
 
-/** Booklet: cover · identity · journey · 5 province spreads (2 per page) · finisher */
-export default function PassportBook({ passport, subs }) {
-  const byProv = {}
-  for (const s of subs) {
-    const cur = byProv[s.province]
-    const rank = (x) => (['approved', 'auto_approved'].includes(x?.status) ? 3 : ['pending', 'flagged'].includes(x?.status) ? 2 : x ? 1 : 0)
-    if (rank(s) > rank(cur)) byProv[s.province] = s
-  }
-  const verified = (p) => ['approved', 'auto_approved'].includes(byProv[p]?.status)
-  const done = PROVINCES.filter((p) => verified(p.name)).length
+function usePhoto(path) {
+  const [url, setUrl] = useState(null)
+  useEffect(() => {
+    let live = true
+    if (path) photoUrl(path).then((u) => { if (live) setUrl(u) })
+    return () => { live = false }
+  }, [path])
+  return path ? url : null
+}
+
+/** Booklet: cover · identity · journey · 9 stamp spaces filled in the order results are added · finisher */
+export default function PassportBook({ passport, subs, onChanged }) {
+  const { session } = useApp()
+  // Stamps go into the passport in the order the runner adds them, like a real passport
+  const slots = subs.filter((s) => !['rejected', 'withdrawn'].includes(s.status))
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).slice(0, 9)
+  const byProv = Object.fromEntries(slots.map((s) => [s.province, s]))
+  const done = slots.filter(isOk).length
   const finished = passport.status === 'completed'
+  const canAdd = passport.status === 'active'
 
-  const pairs = []
-  for (let i = 0; i < PROVINCES.length; i += 2) pairs.push(PROVINCES.slice(i, i + 2))
+  const [sheet, setSheet] = useState(null) // province name for the result sheet
+  const [viewer, setViewer] = useState(null) // photo url to view large
+  const [gotoSub, setGotoSub] = useState(() => { try { return sessionStorage.getItem('rtbc_goto_sub') } catch { return null } })
 
   const pages = [
     { key: 'cover', el: <Cover /> },
-    { key: 'id', el: <Identity passport={passport} done={done} /> },
-    { key: 'journey', el: <Journey byProv={byProv} done={done} /> },
-    ...pairs.map((pair, i) => ({
-      key: `p${i}`,
-      el: <ProvincePage pair={pair} startIndex={i * 2} byProv={byProv} passport={passport} />,
-      provinces: pair.map((p) => p.name),
+    { key: 'id', el: <Identity passport={passport} done={done} session={session} onChanged={onChanged} /> },
+    { key: 'journey', el: <Journey byProv={byProv} done={done} canAdd={canAdd} onAdd={setSheet} onOpen={(p) => go(pageOfSlot(slots.indexOf(byProv[p])))} /> },
+    ...[0, 2, 4, 6, 8].map((k) => ({
+      key: `s${k}`,
+      el: <StampPage first={k} slots={slots} passport={passport} canAdd={canAdd} session={session}
+        onChanged={onChanged} onAdd={() => go(2)} onView={setViewer} />,
+      watch: [slots[k], slots[k + 1]].filter(Boolean).map((s) => s.province),
     })),
-    { key: 'finish', el: <Finisher finished={finished} passport={passport} />, provinces: ['__finisher'] },
+    { key: 'finish', el: <Finisher finished={finished} passport={passport} />, watch: ['__finisher'] },
   ]
-
-  // Open on the first page that has a stamp the runner hasn't seen land yet
-  const firstUnseen = pages.findIndex((pg) => pg.provinces?.some((p) =>
-    p === '__finisher' ? finished && !wasSeen(passport.id, p) : verified(p) && !wasSeen(passport.id, p)))
 
   const track = useRef(null)
   const [page, setPage] = useState(0)
-
   const go = useCallback((i) => {
     const el = track.current
-    if (!el) return
-    const n = Math.max(0, Math.min(pages.length - 1, i))
-    el.scrollTo({ left: n * el.clientWidth, behavior: 'smooth' })
-  }, [pages.length])
+    if (!el || i < 0) return
+    el.scrollTo({ left: Math.min(i, el.children.length - 1) * el.clientWidth, behavior: 'smooth' })
+  }, [])
 
+  // Open on: a just-submitted result's page, else the first stamp not yet seen landing
   useEffect(() => {
-    if (firstUnseen > 0) {
-      const t = setTimeout(() => go(firstUnseen), 700)
+    let target = -1
+    if (gotoSub) {
+      const k = slots.findIndex((s) => s.id === gotoSub)
+      if (k >= 0) target = pageOfSlot(k)
+      try { sessionStorage.removeItem('rtbc_goto_sub') } catch { /* ignore */ }
+      setGotoSub(null)
+    } else {
+      target = pages.findIndex((pg) => pg.watch?.some((p) =>
+        p === '__finisher' ? finished && !wasSeen(passport.id, p) : isOk(byProv[p]) && !wasSeen(passport.id, p)))
+    }
+    if (target > 0) {
+      const t = setTimeout(() => go(target), 650)
       return () => clearTimeout(t)
     }
-  }, [firstUnseen, go])
-
-  const onScroll = () => {
-    const el = track.current
-    if (el) setPage(Math.round(el.scrollLeft / el.clientWidth))
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gotoSub, subs])
 
   useEffect(() => {
     const onKey = (e) => {
+      if (sheet || viewer) return
       if (e.key === 'ArrowRight') go(page + 1)
       if (e.key === 'ArrowLeft') go(page - 1)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [page, go])
+  }, [page, go, sheet, viewer])
 
   return (
     <div className="book">
-      <div className="book-track" ref={track} onScroll={onScroll} aria-roledescription="passport booklet">
+      <div className="book-track" ref={track} aria-roledescription="passport booklet"
+        onScroll={(e) => setPage(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
         {pages.map((pg, i) => (
-          <section key={pg.key} className={`leaf ${pg.key === 'cover' ? 'leaf-cover' : ''} ${i === page ? 'on' : ''}`}
-            aria-label={`Page ${i}`} aria-hidden={i !== page}>
+          <section key={pg.key} className={`leaf ${pg.key === 'cover' ? 'leaf-cover' : ''} ${i === page ? 'on' : ''}`} aria-label={`Page ${i}`}>
             {pg.el}
             {i > 0 && <div className="folio">{String(i).padStart(2, '0')}</div>}
           </section>
@@ -87,13 +107,32 @@ export default function PassportBook({ passport, subs }) {
       <div className="book-nav">
         <button className="turn" onClick={() => go(page - 1)} disabled={page === 0} aria-label="Previous page">‹</button>
         <div className="dots">
-          {pages.map((pg, i) => (
-            <button key={pg.key} className={i === page ? 'on' : ''} onClick={() => go(i)} aria-label={`Go to page ${i}`} />
-          ))}
+          {pages.map((pg, i) => <button key={pg.key} className={i === page ? 'on' : ''} onClick={() => go(i)} aria-label={`Go to page ${i}`} />)}
         </div>
         <button className="turn" onClick={() => go(page + 1)} disabled={page === pages.length - 1} aria-label="Next page">›</button>
       </div>
-      <p className="book-hint">{page === 0 ? 'Swipe or tap › to open your passport' : `${done} of 9 provinces stamped`}</p>
+      <p className="book-hint">
+        {page === 0 ? 'Swipe or tap › to open your passport' : page === 2 && canAdd ? 'Tap a province to add your result' : `${done} of 9 provinces stamped`}
+      </p>
+
+      {sheet && (
+        <div className="sheet-wrap" role="dialog" aria-modal="true" aria-label={`Add your ${sheet} result`} onClick={() => setSheet(null)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-head">
+              <img src={stampUrl(PROV[sheet].slug)} alt="" />
+              <div><small>ADD YOUR RESULT</small><h2>{sheet}</h2></div>
+              <button className="x" onClick={() => setSheet(null)} aria-label="Close">×</button>
+            </div>
+            <ResultForm passport={passport} session={session} province={sheet}
+              onDone={(id) => { setSheet(null); setGotoSub(id); onChanged() }} />
+          </div>
+        </div>
+      )}
+      {viewer && (
+        <div className="sheet-wrap viewer" onClick={() => setViewer(null)} role="dialog" aria-label="Medal photo">
+          <img src={viewer} alt="Finisher medal" />
+        </div>
+      )}
     </div>
   )
 }
@@ -108,7 +147,6 @@ function PageHead() {
 }
 
 function Waves() {
-  // gold contour lines, like the printed cover
   const lines = [0, 1, 2, 3].map((k) => {
     const y = 70 + k * 16
     return `M0 ${y} C 60 ${y - 30 - k * 4}, 110 ${y + 20}, 170 ${y - 10} S 260 ${y - 40 + k * 6}, 320 ${y - 4}`
@@ -135,15 +173,39 @@ function Cover() {
   )
 }
 
-function Identity({ passport, done }) {
+function Identity({ passport, done, session, onChanged }) {
   const [first, ...rest] = passport.name_on_passport.split(/\s+/)
+  const url = usePhoto(passport.photo_path)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const input = useRef(null)
+
+  const onFile = async (e) => {
+    const f = e.target.files?.[0]; e.target.value = ''
+    if (!f) return
+    setBusy(true); setErr('')
+    try {
+      const path = await uploadPhoto(session.user.id, f, 'passport')
+      const { error } = await supabase.rpc('rtbc_set_passport_photo', { p_path: path })
+      if (error) throw error
+      onChanged()
+    } catch (x) { setErr(x.message || 'Upload failed') } finally { setBusy(false) }
+  }
+
   return (
     <div className="paper">
       <PageHead />
       <h2 className="pg-title">RACE PASSPORT</h2>
       <p className="pg-sub">This race passport belongs to</p>
       <div className="id-grid">
-        <div className="id-photo"><img src={`${BASE}emblem.png`} alt="" /></div>
+        <button type="button" className={`id-photo ${url ? 'has' : ''}`} onClick={() => input.current?.click()} disabled={busy}
+          aria-label={url ? 'Change your passport photo' : 'Add your passport photo'}>
+          {url ? <img className="face" src={url} alt="Runner" /> : (
+            <span className="add-photo">{busy ? 'Uploading…' : <>＋<br />Add your<br />photo</>}</span>
+          )}
+          {url && <span className="change">{busy ? '…' : 'Change'}</span>}
+        </button>
+        <input ref={input} type="file" accept="image/*" hidden onChange={onFile} />
         <dl className="fields">
           <dt>First name</dt><dd>{first}</dd>
           <dt>Surname</dt><dd>{rest.join(' ') || '—'}</dd>
@@ -153,6 +215,7 @@ function Identity({ passport, done }) {
           </div>
         </dl>
       </div>
+      {err && <p className="fine" style={{ color: '#9B2F2F' }}>{err}</p>}
       <div className="pp-no"><span>PASSPORT Nº</span><b>{passportNo(passport.passport_no)}</b></div>
       <p className="fine">Challenge window: 24 months from the date of issue. A province counts once its official result has been verified.</p>
       <div className="progress-line"><span>Provinces stamped</span><b>{done} / 9</b></div>
@@ -161,23 +224,25 @@ function Identity({ passport, done }) {
   )
 }
 
-function Journey({ byProv, done }) {
+function Journey({ byProv, done, canAdd, onAdd, onOpen }) {
   return (
     <div className="paper">
       <PageHead />
       <h2 className="pg-title">MY JOURNEY</h2>
-      <p className="pg-sub">Each province fills in as it is verified</p>
+      <p className="pg-sub">{canAdd ? 'Tap a province to add your result' : 'Each province fills in as it is verified'}</p>
       <div className="journey">
         {PROVINCES.map((p, i) => {
           const s = byProv[p.name]
-          const ok = ['approved', 'auto_approved'].includes(s?.status)
-          const wait = ['pending', 'flagged'].includes(s?.status)
+          const ok = isOk(s), wait = isWait(s)
+          const action = s ? () => onOpen(p.name) : canAdd ? () => onAdd(p.name) : null
           return (
-            <div key={p.code} className={`jr ${ok ? 'ok' : wait ? 'wait' : ''}`} style={{ '--ink': p.ink }}>
+            <button type="button" key={p.code} className={`jr ${ok ? 'ok' : wait ? 'wait' : ''}`} style={{ '--ink': p.ink }}
+              onClick={action || undefined} disabled={!action}>
               <span className="jr-no">{i + 1}</span>
               <span className="jr-name">{p.name}</span>
-              <span className="jr-box" aria-label={ok ? 'verified' : wait ? 'in review' : 'not yet'}>{ok ? '✓' : wait ? '…' : ''}</span>
-            </div>
+              <span className="jr-act">{ok ? 'Stamped' : wait ? 'In review' : canAdd ? 'Add result ›' : ''}</span>
+              <span className="jr-box">{ok ? '✓' : wait ? '…' : ''}</span>
+            </button>
           )
         })}
       </div>
@@ -189,76 +254,103 @@ function Journey({ byProv, done }) {
 
 function useStampOnView(passportId, key, shouldStamp) {
   const ref = useRef(null)
-  const [state, setState] = useState(() => (shouldStamp && !wasSeen(passportId, key) ? 'armed' : 'rest'))
+  const [state, setState] = useState('rest')
   useEffect(() => {
-    if (state !== 'armed' || !ref.current) return
+    if (!shouldStamp || wasSeen(passportId, key)) { setState('rest'); return }
+    setState('armed')
+    const el = ref.current
+    if (!el) return
     const io = new IntersectionObserver(([e]) => {
       if (e.isIntersecting && e.intersectionRatio > 0.7) {
-        setTimeout(() => {
-          setState('stamping')
-          markSeen(passportId, key)
-          if (navigator.vibrate) navigator.vibrate(30)
-        }, 350)
+        setTimeout(() => { setState('stamping'); markSeen(passportId, key); if (navigator.vibrate) navigator.vibrate(30) }, 350)
         io.disconnect()
       }
     }, { threshold: [0.7] })
-    io.observe(ref.current)
+    io.observe(el)
     return () => io.disconnect()
-  }, [state, passportId, key])
+  }, [shouldStamp, passportId, key])
   return [ref, state]
 }
 
-function ProvinceSlot({ prov, index, sub, passport }) {
-  const ok = ['approved', 'auto_approved'].includes(sub?.status)
-  const wait = ['pending', 'flagged'].includes(sub?.status)
-  const [ref, state] = useStampOnView(passport.id, prov.name, ok)
+function MedalPhoto({ sub, session, onChanged, onView, editable }) {
+  const url = usePhoto(sub.medal_photo_path)
+  const input = useRef(null)
+  const [busy, setBusy] = useState(false)
+  const onFile = async (e) => {
+    const f = e.target.files?.[0]; e.target.value = ''
+    if (!f) return
+    setBusy(true)
+    try {
+      const path = await uploadPhoto(session.user.id, f, 'medal')
+      const { error } = await supabase.rpc('rtbc_set_medal_photo', { p_submission_id: sub.id, p_path: path })
+      if (error) throw error
+      onChanged()
+    } catch (x) { alert(x.message || 'Upload failed') } finally { setBusy(false) }
+  }
+  if (url) return <button type="button" className="medal" onClick={() => onView(url)} aria-label="View medal photo"><img src={url} alt="Finisher medal" /></button>
+  if (!editable) return null
+  return (
+    <>
+      <button type="button" className="medal add" onClick={() => input.current?.click()} disabled={busy}>
+        {busy ? '…' : <>＋<br />Medal<br />photo</>}
+      </button>
+      <input ref={input} type="file" accept="image/*" hidden onChange={onFile} />
+    </>
+  )
+}
+
+function Slot({ k, sub, isNext, passport, canAdd, session, onChanged, onAdd, onView }) {
+  const ok = isOk(sub), wait = isWait(sub)
+  const prov = sub ? PROV[sub.province] : null
+  const [ref, state] = useStampOnView(passport.id, sub?.province || `slot${k}`, ok)
   const km = sub ? sub.distance_m / 1000 : null
+  const no = String(k + 1).padStart(2, '0')
 
   return (
     <div className="slot">
       <div className="slot-head">
-        <h3>{prov.name.toUpperCase()}</h3>
-        <span>PROVINCE {String(index + 1).padStart(2, '0')} / 09</span>
+        <h3>{prov ? prov.name.toUpperCase() : `STAMP ${no}`}</h3>
+        <span>STAMP {no} / 09</span>
       </div>
       <div className="slot-body">
-        <div className={`stamp-box ${ok ? 'has' : ''}`} ref={ref}>
-          {ok ? (
-            <img className={`ink ${state}`} src={stampUrl(prov.slug)} alt={`${prov.name} stamp`}
-              style={{ '--tilt': `${TILT[index]}deg` }} />
-          ) : wait ? (
+        <div className={`stamp-box ${sub ? 'has' : ''}`} ref={ref}>
+          {sub ? (
             <>
-              <img className="ink ghost" src={stampUrl(prov.slug)} alt="" />
-              <span className="box-note">In review</span>
+              <img className={`ink ${ok ? state : 'pending'}`} src={stampUrl(prov.slug)} alt={`${prov.name} stamp${ok ? '' : ', in review'}`}
+                style={{ '--tilt': `${TILT[k]}deg` }} />
+              {wait && <span className="ribbon">IN REVIEW</span>}
+              <MedalPhoto sub={sub} session={session} onChanged={onChanged} onView={onView} editable={canAdd} />
             </>
-          ) : passport.status === 'active' ? (
-            <Link className="box-note link" to={`/submit?province=${encodeURIComponent(prov.name)}`}>Add your<br />result</Link>
-          ) : <span className="box-note">Not stamped</span>}
+          ) : isNext && canAdd ? (
+            <button type="button" className="box-note link" onClick={onAdd}>Your next<br />stamp goes here<br /><b>Add a result ›</b></button>
+          ) : <span className="box-note faint">{no}</span>}
         </div>
         <dl className="race">
-          <dt>Race name</dt><dd>{ok || wait ? sub.race_name : ''}</dd>
-          <dt>Town / city</dt><dd>{ok || wait ? sub.rc_events?.venue_town || '' : ''}</dd>
-          <dt>Race date</dt><dd>{ok || wait ? fmtDate(sub.race_date) : ''}</dd>
+          <dt>Race name</dt><dd>{sub?.race_name || ''}</dd>
+          <dt>Town / city</dt><dd>{sub?.rc_events?.venue_town || ''}</dd>
+          <dt>Race date</dt><dd>{sub ? fmtDate(sub.race_date) : ''}</dd>
           <dt>Distance</dt>
           <dd className="ticks">
-            <span className={ok && km < 30 ? 'x' : ''}>21.1</span>
-            <span className={ok && km >= 30 && km <= 43 ? 'x' : ''}>42.2</span>
-            <span className={ok && km > 43 ? 'x' : ''}>Ultra</span>
+            <span className={sub && km < 30 ? 'x' : ''}>21.1</span>
+            <span className={sub && km >= 30 && km <= 43 ? 'x' : ''}>42.2</span>
+            <span className={sub && km > 43 ? 'x' : ''}>Ultra</span>
           </dd>
-          <dt>Finish time</dt><dd className="mono">{ok || wait ? fmtTime(sub.finish_seconds) : ''}</dd>
+          <dt>Finish time</dt><dd className="mono">{sub ? fmtTime(sub.finish_seconds) : ''}</dd>
         </dl>
       </div>
     </div>
   )
 }
 
-function ProvincePage({ pair, startIndex, byProv, passport }) {
+function StampPage({ first, slots, ...rest }) {
+  const nextIndex = slots.length
   return (
     <div className="paper">
       <PageHead />
-      {pair.map((p, k) => (
-        <ProvinceSlot key={p.code} prov={p} index={startIndex + k} sub={byProv[p.name]} passport={passport} />
+      {[first, first + 1].filter((k) => k < 9).map((k) => (
+        <Slot key={k} k={k} sub={slots[k]} isNext={k === nextIndex} {...rest} />
       ))}
-      {pair.length === 1 && <div className="slot slot-empty"><img src={`${BASE}emblem.png`} alt="" /></div>}
+      {first === 8 && <div className="slot slot-empty"><img src={`${BASE}emblem.png`} alt="" /></div>}
     </div>
   )
 }

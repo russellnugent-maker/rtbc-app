@@ -124,6 +124,10 @@ figcaption b { display: block; color: var(--ink); font-weight: 600; font-size: 1
 .partner-feature .pf-logo { display: flex; align-items: center; gap: 12px; font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif; font-weight: 800; font-size: clamp(19px, 5.4vw, 26px); color: #0A1628; white-space: nowrap; letter-spacing: -.01em; }
 .partner-feature .pf-logo img { width: 46px; height: 46px; border-radius: 11px; }
 .partner-feature .pf-logo small { font-size: .7em; font-weight: 600; color: #4A8ADC; }
+.partner-feature.ynm { border-left: 6px solid #E8490F; }
+.partner-feature.ynm .pf-label { color: #E8490F; }
+.partner-feature.ynm .pf-logo { font-family: 'Arial Narrow', 'Roboto Condensed', system-ui, sans-serif; color: #221E19; letter-spacing: .02em; }
+.partner-feature.ynm .pf-logo img { border: 1px solid #E5DFD2; }
 .partner-feature p { flex: 1 1 260px; font-size: 15px; color: var(--muted); margin: 0; }
 .offers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1.5px solid var(--gold); }
 @media (max-width: 760px) { .offers { grid-template-columns: 1fr; } }
@@ -306,6 +310,11 @@ footer p { max-width: 60ch; }
         <div><span class="pf-label">Official Race Finder Partner</span>
         <span class="pf-logo"><img src="img/runningcalendar.png" alt="" width="46" height="46"><span>RunningCalendar<small>.co.za</small></span></span></div>
         <p>Southern Africa’s running calendar. Every qualifying race in the challenge’s race finder comes from RunningCalendar’s listings, so you can plan all nine provinces in one place.</p>
+      </a>
+      <a class="partner-feature ynm" href="https://yournextmove.run/" target="_blank" rel="noopener">
+        <div><span class="pf-label">Official Training Partner</span>
+        <span class="pf-logo"><img src="img/ynm.png" alt="" width="46" height="46"><span>YOUR NEXT MOVE</span></span></div>
+        <p>Training plans built around your races, from your current fitness to race day. Every Run the Beloved Country runner gets <b>50% off a year of YNM</b>.</p>
       </a>
       <div class="offers">
         <div class="offer"><h3>Naming &amp; passport</h3><p>Presence on the passport itself, carried and written in for the whole challenge, plus the campaign and website.</p></div>

@@ -195,3 +195,10 @@
 .back-scan { font: 600 9px/1.4 var(--body); letter-spacing: .14em; color: #E3D9BF; text-transform: uppercase; }
 .back-foot { margin-top: auto; font: 600 9px/1.6 var(--body); letter-spacing: .28em; color: #D2B270; }
 .back-foot small { display: block; font-size: 7px; letter-spacing: .2em; color: #CFC4A6; }
+.partner-card.ynm { margin-top: 10px; background: #F6F3EC; border-left: 4px solid #E8490F; }
+.partner-card .ynm-word { font-size: .95rem; }
+.back-cover .qr { width: 34%; margin-top: 12px; }
+.back-frame { padding-top: 20px; }
+.pc-role { display: block; font: 700 7px/1 var(--body); letter-spacing: .2em; color: #2F6DBA; margin-bottom: 7px; }
+.pc-role.ynm { color: #E8490F; }
+.partner-card p { margin-top: 6px; }

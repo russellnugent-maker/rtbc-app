@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase.js'
 import { uploadPhoto, photoUrl } from '../lib/photos.js'
 import { PROVINCES, stampUrl, passportNo, fmtDate, fmtTime } from '../lib/provinces.js'
 import ResultForm from './ResultForm.jsx'
-import { RCLockup, RCBadge, RC_URL } from './RCPartner.jsx'
+import { RCLockup, RCBadge, RC_URL, YNMLockup, YNM_OFFER_URL } from './RCPartner.jsx'
 import './passport.css'
 
 const BASE = import.meta.env.BASE_URL
@@ -381,10 +381,15 @@ function BackCover() {
   return (
     <div className="back-cover">
       <div className="back-frame">
-        <div className="back-eyebrow">OFFICIAL RACE FINDER PARTNER</div>
+        <div className="back-eyebrow">OFFICIAL PARTNERS</div>
         <a className="partner-card" href={RC_URL} target="_blank" rel="noopener noreferrer">
-          <RCLockup size="lg" />
-          <p>Southern Africa’s running calendar. Find a qualifying half marathon, marathon or ultra in every province.</p>
+          <small className="pc-role">RACE FINDER PARTNER</small>
+          <RCLockup />
+          <p>Find a qualifying half marathon, marathon or ultra in every province.</p>
+        </a>
+        <a className="partner-card ynm" href={YNM_OFFER_URL} target="_blank" rel="noopener noreferrer">
+          <small className="pc-role ynm">TRAINING PARTNER · 50% OFF FOR RTBC RUNNERS</small>
+          <YNMLockup />
         </a>
         <div className="qr"><img src={`${BASE}partners/runningcalendar-qr.svg`} alt="QR code to runningcalendar.co.za" /></div>
         <div className="back-scan">Scan to find your next race</div>

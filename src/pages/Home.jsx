@@ -4,6 +4,7 @@ import { useApp } from '../App.jsx'
 import { supabase } from '../lib/supabase.js'
 import { PROVINCES, stampUrl } from '../lib/provinces.js'
 import PassportBook from '../components/PassportBook.jsx'
+import { YNMPerk } from '../components/RCPartner.jsx'
 
 export default function Home() {
   const { passport, profile } = useApp()
@@ -65,6 +66,7 @@ function Passport({ passport }) {
       {passport.status === 'active' && (
         <Link className="btn block" to="/submit" style={{ marginTop: 10 }}>Add a race result</Link>
       )}
+      {['active', 'completed'].includes(passport.status) && <YNMPerk />}
     </>
   )
 }

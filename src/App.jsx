@@ -8,6 +8,7 @@ import Submit from './pages/Submit.jsx'
 import Results from './pages/Results.jsx'
 import Enter from './pages/Enter.jsx'
 import Admin from './pages/Admin.jsx'
+import Icon from './components/Icon.jsx'
 
 const Ctx = createContext(null)
 export const useApp = () => useContext(Ctx)
@@ -46,9 +47,19 @@ export default function App() {
     <Ctx.Provider value={{ session, profile, passport, reload, isAdmin }}>
       <div className="shell">
         <header className="topbar">
-          <img src={`${import.meta.env.BASE_URL}emblem.png`} alt="" />
-          <Link to="/" className="title">RUN THE BELOVED COUNTRY</Link>
-          {session && <button onClick={() => supabase.auth.signOut()}>Sign out</button>}
+          <div className="topbar-row">
+            <img src={`${import.meta.env.BASE_URL}emblem.png`} alt="" />
+            <Link to="/" className="title">RUN THE BELOVED COUNTRY</Link>
+            {session && <button onClick={() => supabase.auth.signOut()}>Sign out</button>}
+          </div>
+          {session && (
+            <nav className="tabs" aria-label="Main">
+              <NavLink to="/" end><Icon name="passport" />Passport</NavLink>
+              <NavLink to="/races"><Icon name="race" />Find a race</NavLink>
+              <NavLink to="/results"><Icon name="results" />My results</NavLink>
+              {isAdmin && <NavLink to="/admin"><Icon name="review" />Review</NavLink>}
+            </nav>
+          )}
         </header>
         <main>
           {!session ? (
@@ -67,14 +78,6 @@ export default function App() {
             </Routes>
           )}
         </main>
-        {session && (
-          <nav className="tabs" aria-label="Main">
-            <NavLink to="/" end>Passport</NavLink>
-            <NavLink to="/races">Find a race</NavLink>
-            <NavLink to="/results">My results</NavLink>
-            {isAdmin && <NavLink to="/admin">Review</NavLink>}
-          </nav>
-        )}
       </div>
     </Ctx.Provider>
   )

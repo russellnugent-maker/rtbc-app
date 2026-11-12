@@ -6,4 +6,4 @@
 
 Backend: the shared Energy Lab Supabase project (`lkazcbvczleavcwlosrx`), tables `rtbc_passports`, `rtbc_submissions`, bucket `rtbc-proofs` (migration `rtbc_core`, 12 Nov 2026).
 
-Netlify env vars needed for entries: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PAYFAST_MERCHANT_ID`, `PAYFAST_MERCHANT_KEY`, `PAYFAST_PASSPHRASE`, `RTBC_ENTRY_FEE_CENTS`, optional `PAYFAST_SANDBOX=true`. Until the fee and PayFast keys are set, the entry form answers "Entries open soon".
+Netlify env vars needed for entries: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PAYFAST_MERCHANT_ID`, `PAYFAST_MERCHANT_KEY`, `PAYFAST_PASSPHRASE`, `RTBC_ENTRY_FEE_CENTS`, optional `PAYFAST_SANDBOX=true`. While `PAYFAST_SANDBOX=true`, only accounts listed in `RTBC_TEST_EMAILS` (comma-separated) can enter. Until the fee and PayFast keys are set, the entry form answers "Entries open soon".

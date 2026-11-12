@@ -35,6 +35,14 @@ export default async (req) => {
   const user = u.user
   if (!user.email_confirmed_at) return json({ error: 'Please confirm your email address first.' }, 403)
 
+  // While PayFast is in sandbox (test money), only listed test accounts may enter,
+  // so nobody can get a real passport with a fake payment.
+  if (Netlify.env.get('PAYFAST_SANDBOX') === 'true') {
+    const testers = (Netlify.env.get('RTBC_TEST_EMAILS') || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean)
+    if (!testers.includes(String(user.email).toLowerCase()))
+      return json({ error: 'Entries open soon. We’ll email you the moment they do.' }, 503)
+  }
+
   let b
   try { b = await req.json() } catch { return json({ error: 'Bad request' }, 400) }
 

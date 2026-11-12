@@ -51,7 +51,7 @@ function Passport({ passport }) {
   const [subs, setSubs] = useState(null)
   const load = useCallback(() => {
     supabase.from('rtbc_submissions')
-      .select('id, province, status, race_name, race_date, distance_m, finish_seconds, created_at, medal_photo_path, rc_events(venue_town)')
+      .select('id, province, status, race_name, race_date, distance_m, finish_seconds, created_at, medal_photo_path, rc_event_id, rc_events(venue_town)')
       .eq('passport_id', passport.id).order('created_at', { ascending: true })
       .then(({ data }) => setSubs(data || []))
   }, [passport.id])

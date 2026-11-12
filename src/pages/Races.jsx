@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { PROVINCES, fmtDate } from '../lib/provinces.js'
+import { RCBanner } from '../components/RCPartner.jsx'
 
 // A race qualifies if it is a road race of at least 21.1 km (T&Cs 3.2).
 export const qualifyingRaces = (ev) =>
@@ -29,7 +30,8 @@ export default function Races() {
   return (
     <>
       <h1>Find a qualifying race</h1>
-      <p className="muted small">Officially timed road races of 21.1 km or more, from our race finder partner RunningCalendar.co.za. Always confirm dates and entries with the organiser.</p>
+      <RCBanner />
+      <p className="muted small">Officially timed road races of 21.1 km or more in each province. Always confirm dates and entries with the organiser.</p>
       <div className="chips" role="tablist">
         {PROVINCES.map((p) => (
           <button key={p.code} className={prov === p.name ? 'on' : ''} onClick={() => setProv(p.name)}>{p.name}</button>

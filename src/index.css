@@ -96,3 +96,17 @@ input[type=text], input[type=email], input[type=password], input[type=date], inp
 .race-opt span { display: block; font-size: .78rem; color: var(--muted); margin-top: 2px; }
 .race-opt.on { border-color: var(--orange); box-shadow: 0 0 0 3px #F5911D33; background: #FFF8EC; }
 .race-opt.other { background: transparent; border-style: dashed; }
+
+/* RunningCalendar partner */
+.rc-lockup { display: inline-flex; align-items: center; gap: 8px; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+.rc-lockup img { width: 30px; height: 30px; border-radius: 7px; }
+.rc-word { font-weight: 800; font-size: 1.05rem; color: #0A1628; letter-spacing: -.01em; }
+.rc-word small { font-weight: 600; font-size: .75em; color: #4A8ADC; }
+.rc-lockup.rc-lg img { width: 46px; height: 46px; border-radius: 10px; }
+.rc-lockup.rc-lg .rc-word { font-size: 1.12rem; }
+.rc-lockup { max-width: 100%; }
+.rc-word { white-space: nowrap; }
+.rc-lockup.rc-dark .rc-word { color: #fff; }
+.rc-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; background: #fff; border: 1.5px solid #CFE0F6; border-left: 5px solid #4A8ADC; border-radius: 12px; padding: 10px 12px; margin: 4px 0 14px; text-decoration: none; color: inherit; }
+.rc-tag { font-size: .72rem; color: var(--muted); text-align: left; line-height: 1.35; letter-spacing: .02em; }
+.rc-tag b { color: #2F6DBA; font-weight: 700; letter-spacing: 0; }

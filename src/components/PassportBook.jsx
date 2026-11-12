@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.js'
 import { uploadPhoto, photoUrl } from '../lib/photos.js'
 import { PROVINCES, stampUrl, passportNo, fmtDate, fmtTime } from '../lib/provinces.js'
 import ResultForm from './ResultForm.jsx'
+import { RCLockup, RCBadge, RC_URL } from './RCPartner.jsx'
 import './passport.css'
 
 const BASE = import.meta.env.BASE_URL
@@ -54,6 +55,7 @@ export default function PassportBook({ passport, subs, onChanged }) {
       watch: [slots[k], slots[k + 1]].filter(Boolean).map((s) => s.province),
     })),
     { key: 'finish', el: <Finisher finished={finished} passport={passport} />, watch: ['__finisher'] },
+    { key: 'back', el: <BackCover /> },
   ]
 
   const track = useRef(null)
@@ -100,7 +102,7 @@ export default function PassportBook({ passport, subs, onChanged }) {
         {pages.map((pg, i) => (
           <section key={pg.key} className={`leaf ${pg.key === 'cover' ? 'leaf-cover' : ''} ${i === page ? 'on' : ''}`} aria-label={`Page ${i}`}>
             {pg.el}
-            {i > 0 && <div className="folio">{String(i).padStart(2, '0')}</div>}
+            {i > 0 && pg.key !== 'back' && <div className="folio">{String(i).padStart(2, '0')}</div>}
           </section>
         ))}
       </div>
@@ -336,6 +338,7 @@ function Slot({ k, sub, isNext, passport, canAdd, session, onChanged, onAdd, onV
             <span className={sub && km > 43 ? 'x' : ''}>Ultra</span>
           </dd>
           <dt>Finish time</dt><dd className="mono">{sub ? fmtTime(sub.finish_seconds) : ''}</dd>
+          {sub?.rc_event_id && <RCBadge />}
         </dl>
       </div>
     </div>
@@ -370,6 +373,23 @@ function Finisher({ finished, passport }) {
       <p className="ran">I ran the beloved country</p>
       <div className="sign"><span>{finished ? passport.name_on_passport : ''}</span><small>Runner</small></div>
       <p className="fine center">{finished ? `Completed ${fmtDate(passport.completed_at)}. Your printed finisher passport is on its way.` : 'Finishers receive this passport in print, with all nine races filled in.'}</p>
+    </div>
+  )
+}
+
+function BackCover() {
+  return (
+    <div className="back-cover">
+      <div className="back-frame">
+        <div className="back-eyebrow">OFFICIAL RACE FINDER PARTNER</div>
+        <a className="partner-card" href={RC_URL} target="_blank" rel="noopener noreferrer">
+          <RCLockup size="lg" />
+          <p>Southern Africa’s running calendar. Find a qualifying half marathon, marathon or ultra in every province.</p>
+        </a>
+        <div className="qr"><img src={`${BASE}partners/runningcalendar-qr.svg`} alt="QR code to runningcalendar.co.za" /></div>
+        <div className="back-scan">Scan to find your next race</div>
+        <div className="back-foot">RUN THE BELOVED COUNTRY<small>PRESENTED BY ENERGY LAB ATHLETIC COMPANY</small></div>
+      </div>
     </div>
   )
 }

@@ -180,3 +180,18 @@
   .ink.stamping { animation: none; }
   .book-track { scroll-behavior: auto; }
 }
+
+/* Partner bits inside the booklet */
+.rc-badge { display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; font: 600 7.5px/1 Inter, system-ui, sans-serif; letter-spacing: .02em; color: #2F6DBA; background: #fff; border: 1px solid #CFE0F6; border-radius: 99px; padding: 2px 6px 2px 2px; white-space: nowrap; }
+.rc-badge img { width: 12px; height: 12px; border-radius: 3px; }
+.back-cover { height: 100%; background: radial-gradient(ellipse at 50% 70%, #1C4A3A, #123A2C 70%); padding: 14px; color: #D2B270; }
+.back-frame { height: 100%; border: 1px solid #D2B27088; border-radius: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 26px 16px 18px; }
+.back-eyebrow { font: 600 8.5px/1 var(--body); letter-spacing: .32em; color: #E3D9BF; display: flex; gap: 8px; align-items: center; }
+.back-eyebrow::before, .back-eyebrow::after { content: ''; width: 20px; height: 1px; background: #F5911D; }
+.partner-card { margin: 14px 0 0; background: #FBF7EE; border-radius: 12px; padding: 14px 16px 12px; width: 100%; box-shadow: 0 4px 14px #0004; text-decoration: none; display: block; }
+.partner-card p { font: 500 10px/1.45 var(--body); color: #55584C; margin: 8px 0 0; }
+.qr { width: 46%; margin: 16px auto 6px; padding: 6px; background: #FBF7EE; border-radius: 8px; }
+.qr img { width: 100%; display: block; image-rendering: pixelated; }
+.back-scan { font: 600 9px/1.4 var(--body); letter-spacing: .14em; color: #E3D9BF; text-transform: uppercase; }
+.back-foot { margin-top: auto; font: 600 9px/1.6 var(--body); letter-spacing: .28em; color: #D2B270; }
+.back-foot small { display: block; font-size: 7px; letter-spacing: .2em; color: #CFC4A6; }

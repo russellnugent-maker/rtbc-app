@@ -119,6 +119,12 @@ figcaption b { display: block; color: var(--ink); font-weight: 600; font-size: 1
 .dark .head h2 { color: #ECE0C4; }
 .dark .head p { color: #CFC5A7; }
 .dark .eyebrow { color: var(--gold); }
+.partner-feature { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; background: #FBF7EE; border-radius: 14px; padding: 18px 22px; margin: 0 0 28px; color: var(--ink); text-decoration: none; box-shadow: 0 8px 24px #0003; }
+.partner-feature .pf-label { font-size: 11px; font-weight: 700; letter-spacing: .24em; color: var(--orange-ink); text-transform: uppercase; display: block; margin-bottom: 8px; }
+.partner-feature .pf-logo { display: flex; align-items: center; gap: 12px; font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif; font-weight: 800; font-size: clamp(19px, 5.4vw, 26px); color: #0A1628; white-space: nowrap; letter-spacing: -.01em; }
+.partner-feature .pf-logo img { width: 46px; height: 46px; border-radius: 11px; }
+.partner-feature .pf-logo small { font-size: .7em; font-weight: 600; color: #4A8ADC; }
+.partner-feature p { flex: 1 1 260px; font-size: 15px; color: var(--muted); margin: 0; }
 .offers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1.5px solid var(--gold); }
 @media (max-width: 760px) { .offers { grid-template-columns: 1fr; } }
 .offer { padding: 22px 22px 6px 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -292,10 +298,15 @@ footer p { max-width: 60ch; }
   <section class="dark" id="partners">
     <div class="wrap">
       <div class="head">
-        <span class="eyebrow">Partner with us</span>
+        <span class="eyebrow">Partners</span>
         <h2>Travel the country with runners</h2>
         <p>Every entrant spends up to 24 months travelling to towns and races across all nine provinces. We are looking for partners who want to be part of that journey.</p>
       </div>
+      <a class="partner-feature" href="https://runningcalendar.co.za/?utm_source=rtbc&amp;utm_medium=website" target="_blank" rel="noopener">
+        <div><span class="pf-label">Official Race Finder Partner</span>
+        <span class="pf-logo"><img src="img/runningcalendar.png" alt="" width="46" height="46"><span>RunningCalendar<small>.co.za</small></span></span></div>
+        <p>Southern Africa’s running calendar. Every qualifying race in the challenge’s race finder comes from RunningCalendar’s listings, so you can plan all nine provinces in one place.</p>
+      </a>
       <div class="offers">
         <div class="offer"><h3>Naming &amp; passport</h3><p>Presence on the passport itself, carried and written in for the whole challenge, plus the campaign and website.</p></div>
         <div class="offer"><h3>Travel, fuel &amp; stay</h3><p>Help runners get to every province, with benefits for entrants along the way.</p></div>

@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# The web app is a single-page app under /app
+[[redirects]]
+  from = "/app/*"
+  to = "/app/index.html"
+  status = 200

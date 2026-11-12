@@ -15,14 +15,14 @@ export default async (req) => {
 
   // 1. Signature (fields in the order PayFast sent them, minus the signature)
   const unsigned = pairs.filter(([k]) => k !== 'signature')
-  if (signature(unsigned, Netlify.env.get('PAYFAST_PASSPHRASE')) !== data.signature) {
-    log('bad signature'); return new Response('Bad signature', { status: 400 })
+  if (signature(unsigned, Netlify.env.get('PAYFAST_PASSPHRASE'), true) !== data.signature) {
+    log('bad signature', { fields: unsigned.map(([k]) => k).join(',') }); return new Response('Bad signature', { status: 400 })
   }
 
   // 2. Ask PayFast to confirm the notification is genuine
   try {
     const v = await fetch(`https://${pfHost()}/eng/query/validate`, {
-      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: paramString(unsigned),
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: paramString(unsigned, true),
     })
     if ((await v.text()).trim() !== 'VALID') { log('not valid per PayFast'); return new Response('Invalid', { status: 400 }) }
   } catch (e) { log('validate call failed', { e: String(e) }); return new Response('Retry', { status: 500 }) }

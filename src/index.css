@@ -85,3 +85,11 @@ input[type=text], input[type=email], input[type=password], input[type=date], inp
 .center { text-align: center; }
 .spinner { margin: 40px auto; width: 28px; height: 28px; border: 3px solid var(--rule); border-top-color: var(--orange); border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Race picker */
+.race-pick { display: grid; gap: 8px; }
+.race-opt { text-align: left; background: #fff; border: 1.5px solid var(--rule); border-radius: 10px; padding: 10px 12px; cursor: pointer; color: var(--ink); font: inherit; }
+.race-opt b { display: block; font-size: .92rem; }
+.race-opt span { display: block; font-size: .78rem; color: var(--muted); margin-top: 2px; }
+.race-opt.on { border-color: var(--orange); box-shadow: 0 0 0 3px #F5911D33; background: #FFF8EC; }
+.race-opt.other { background: transparent; border-style: dashed; }

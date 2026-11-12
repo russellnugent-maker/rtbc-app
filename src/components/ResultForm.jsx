@@ -14,8 +14,8 @@ const DISTANCES = [
 export default function ResultForm({ passport, session, province: fixedProvince, onDone }) {
   const [province, setProvince] = useState(fixedProvince || '')
   const [events, setEvents] = useState([])
-  const [eventId, setEventId] = useState('')
-  const [manual, setManual] = useState(false)
+  const [eventId, setEventId] = useState('') // RunningCalendar event id, or 'manual'
+  const [loadingEvents, setLoadingEvents] = useState(false)
   const [raceName, setRaceName] = useState('')
   const [raceDate, setRaceDate] = useState('')
   const [dist, setDist] = useState(21097)
@@ -37,18 +37,27 @@ export default function ResultForm({ passport, session, province: fixedProvince,
   }, [passport.id])
 
   useEffect(() => {
-    if (!province) return
+    if (!province || !raceDate) return
     let live = true
-    supabase.from('rc_events').select('id, name, event_date, venue_town, races')
-      .eq('venue_province', province).gte('event_date', issued).lte('event_date', today)
-      .order('event_date', { ascending: false }).limit(200)
-      .then(({ data }) => { if (live) { setEvents((data || []).filter((e) => qualifyingRaces(e).length)); setEventId('') } })
+    setLoadingEvents(true)
+    supabase.from('rc_events').select('id, name, event_date, end_date, venue_town, races')
+      .eq('venue_province', province).lte('event_date', raceDate)
+      .or(`event_date.eq.${raceDate},end_date.gte.${raceDate}`)
+      .order('name').limit(50)
+      .then(({ data }) => {
+        if (!live) return
+        const list = (data || []).filter((e) => qualifyingRaces(e).length)
+        setEvents(list)
+        setEventId(list.length ? '' : 'manual')
+        setLoadingEvents(false)
+      })
     return () => { live = false }
-  }, [province, issued, today])
+  }, [province, raceDate])
 
+  const manual = eventId === 'manual'
   const ev = useMemo(() => events.find((e) => String(e.id) === eventId), [events, eventId])
   const evDistances = ev ? qualifyingRaces(ev).map((r) => Number(r.distance_metres)) : []
-  const chosenDate = manual ? raceDate : ev?.event_date
+  const chosenDate = raceDate
   const [now] = useState(() => Date.now())
   const late = chosenDate && (now - new Date(chosenDate)) / 86400000 > 30
 
@@ -69,7 +78,8 @@ export default function ResultForm({ passport, session, province: fixedProvince,
     const name = manual ? raceName.trim() : ev?.name
     const date = chosenDate
     if (!province) return setError('Choose the province.')
-    if (!name || !date) return setError('Choose your race, or enter its name and date.')
+    if (!date) return setError('Enter the date of the race.')
+    if (!name) return setError(manual ? 'Enter the name of the race.' : 'Choose your race from the list, or tap “My race isn’t listed”.')
     if (date < issued) return setError('Only races run after your passport was issued count.')
     if (date > today) return setError('That race date is in the future.')
     if (!distanceM || distanceM < 21097) return setError('Enter the race distance (ultras must be longer than 42.2 km).')
@@ -124,23 +134,47 @@ export default function ResultForm({ passport, session, province: fixedProvince,
         </>
       )}
 
-      {province && !manual && (
+      {province && (
         <>
-          <label htmlFor="race">Race</label>
-          <select id="race" value={eventId} onChange={(e) => pickRace(e.target.value)}>
-            <option value="">{events.length ? 'Choose your race' : 'No listed races since your passport was issued'}</option>
-            {events.map((x) => <option key={x.id} value={x.id}>{fmtDate(x.event_date)} · {x.name}{x.venue_town ? `, ${x.venue_town}` : ''}</option>)}
-          </select>
-          <div className="hint">Race counts for the province RunningCalendar lists it under. <a href="#" onClick={(e) => { e.preventDefault(); setManual(true) }}>My race isn’t listed</a></div>
+          <label htmlFor="rd">Date of the race</label>
+          <input id="rd" type="date" min={issued} max={today} value={raceDate}
+            onChange={(e) => { setRaceDate(e.target.value); setEvents([]); setEventId('') }} />
+          {!raceDate && <div className="hint">Races from {fmtDate(issued)} (the day your passport was issued) onwards count.</div>}
         </>
       )}
-      {province && manual && (
+
+      {province && raceDate && (
         <>
-          <label htmlFor="rn">Race name</label>
-          <input id="rn" type="text" value={raceName} onChange={(e) => setRaceName(e.target.value)} />
-          <label htmlFor="rd">Race date</label>
-          <input id="rd" type="date" min={issued} max={today} value={raceDate} onChange={(e) => setRaceDate(e.target.value)} />
-          <div className="hint">Unlisted races count for the province of their official start. <a href="#" onClick={(e) => { e.preventDefault(); setManual(false) }}>Pick from the list instead</a></div>
+          <label>Which race?</label>
+          {loadingEvents ? <div className="hint">Looking up races in {province} on {fmtDate(raceDate)}…</div> : (
+            <div className="race-pick" role="radiogroup">
+              {events.length === 0 && (
+                <div className="hint" style={{ marginBottom: 6 }}>RunningCalendar has no qualifying {province} races on {fmtDate(raceDate)}. Enter your race below.</div>
+              )}
+              {events.map((x) => {
+                const dists = qualifyingRaces(x).map((r) => `${(Number(r.distance_metres) / 1000).toFixed(1)} km`).join(' · ')
+                return (
+                  <button type="button" role="radio" aria-checked={eventId === String(x.id)} key={x.id}
+                    className={`race-opt ${eventId === String(x.id) ? 'on' : ''}`} onClick={() => pickRace(String(x.id))}>
+                    <b>{x.name}</b>
+                    <span>{x.venue_town ? `${x.venue_town} · ` : ''}{dists}</span>
+                  </button>
+                )
+              })}
+              {events.length > 0 && (
+                <button type="button" role="radio" aria-checked={manual} className={`race-opt other ${manual ? 'on' : ''}`} onClick={() => setEventId('manual')}>
+                  <b>My race isn’t listed</b><span>Enter the race details yourself</span>
+                </button>
+              )}
+            </div>
+          )}
+          {manual && (
+            <>
+              <label htmlFor="rn">Race name</label>
+              <input id="rn" type="text" placeholder="e.g. Kalahari Half Marathon" value={raceName} onChange={(e) => setRaceName(e.target.value)} />
+              <div className="hint">Unlisted races count for the province of their official start, and are checked by hand.</div>
+            </>
+          )}
         </>
       )}
 

@@ -159,7 +159,7 @@ input, select { font: inherit; font-size: 16px; letter-spacing: 0; text-transfor
 .form-msg { font-size: 14px; font-weight: 600; }
 .form-msg.ok { color: #1F6B3A; }
 .form-msg.err { color: #A6302A; }
-.hidden-field { position: absolute; left: -9999px; }
+.hidden-field { display: none !important; }
 
 footer { background: var(--forest); color: #BFB494; font-size: 13px; }
 footer .wrap { padding-block: 36px; display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: center; justify-content: space-between; }
@@ -350,9 +350,9 @@ footer p { max-width: 60ch; }
         <h2>Register your interest</h2>
         <p>Leave your details and we’ll email you when entries open. No payment, no commitment.</p>
       </div>
-      <form id='interest-form' method='POST' name='rtbc-interest' data-netlify='true' netlify-honeypot='company'>
+      <form id='interest-form' method='POST' name='rtbc-interest' data-netlify='true' netlify-honeypot='bot-field'>
         <input type="hidden" name="form-name" value="rtbc-interest">
-        <p class="hidden-field"><label>Leave this empty <input name="company" id="f-company" tabindex="-1" autocomplete="off"></label></p>
+        <p class="hidden-field" hidden aria-hidden="true"><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
         <div class="row">
           <label for="f-first">First name<input id="f-first" name="first_name" required autocomplete="given-name"></label>
           <label for="f-last">Surname<input id="f-last" name="surname" required autocomplete="family-name"></label>

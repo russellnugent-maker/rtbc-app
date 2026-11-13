@@ -1,40 +1,83 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
+import { NATIVE } from '../lib/platform.js'
+import { authRedirectUrl, WEB_ORIGIN, WEB_HOST, webAppUrl } from '../lib/routes.js'
+import { friendlyAuthError, isNoAccountForOtp, normaliseCode } from '../lib/authErrors.js'
+import { landingLinkError } from '../lib/authLanding.js'
+import { OTP_LENGTH, codeLabel, JUNK_HINT } from '../lib/authConfig.js'
 
-const redirectTo = () => `${window.location.origin}/app/`
+// Sign-in (build spec §2, Login). Web: create account, password, magic link, reset. App: password
+// or an emailed code (OTP_LENGTH digits, src/lib/authConfig.js), and reset; no account creation (the app never creates accounts).
+const redirectTo = () => authRedirectUrl({ native: NATIVE, origin: window.location.origin, base: import.meta.env.BASE_URL })
 
+// signup | signin | link (web) | code (app) | reset
 export default function Auth() {
-  const [mode, setMode] = useState('signup') // signup | signin | reset
+  const [mode, setMode] = useState(NATIVE ? 'signin' : 'signup')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [code, setCode] = useState('')
+  const [codeSent, setCodeSent] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(landingLinkError || '')
   const [notice, setNotice] = useState('')
+
+  const go = (m) => { setMode(m); setError(''); setNotice(''); setCodeSent(false); setCode('') }
+
+  // A code or link for an email: shouldCreateUser false, so it never makes an account. An email
+  // with no account gets the same notice as one that has one.
+  const sendOtp = async (withLink) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: false, ...(withLink ? { emailRedirectTo: redirectTo() } : {}) },
+    })
+    if (error && !isNoAccountForOtp(error)) throw error
+  }
 
   const submit = async (e) => {
     e.preventDefault()
     setError(''); setNotice(''); setBusy(true)
     try {
-      if (mode === 'signup') {
+      if (!NATIVE && mode === 'signup') {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(), password,
           options: { emailRedirectTo: redirectTo(), data: { full_name: name.trim(), app_source: 'rtbc' } },
         })
         if (error) throw error
-        if (!data.session) setNotice('Check your email and tap the link to confirm your account. Then come back here and sign in.')
+        if (!data.session) setNotice(`Check your email and tap the link to confirm your account. Then come back here and sign in. ${JUNK_HINT}`)
       } else if (mode === 'signin') {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+        if (error) throw error
+      } else if (!NATIVE && mode === 'link') {
+        await sendOtp(true)
+        setNotice(`If that email has an account, a sign-in link is on its way. Open it on this device. ${JUNK_HINT}`)
+      } else if (mode === 'code' && !codeSent) {
+        await sendOtp(false)
+        setCodeSent(true)
+        setNotice(`If that email has an account, ${codeLabel()} is on its way.`) // the junk-folder line sits under the code box
+      } else if (mode === 'code') {
+        const { digits, valid } = normaliseCode(code, OTP_LENGTH)
+        if (!valid) { setError(`Enter the ${OTP_LENGTH} digits from the email.`); return }
+        const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: digits, type: 'email' })
         if (error) throw error
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirectTo() })
         if (error) throw error
-        setNotice('If that email has an account, a reset link is on its way.')
+        setNotice(NATIVE
+          ? `If that email has an account, a reset link is on its way. It opens the website; set your new password there, then sign in here. ${JUNK_HINT}`
+          : `If that email has an account, a reset link is on its way. ${JUNK_HINT}`)
       }
     } catch (err) {
-      setError(friendly(err))
+      setError(friendlyAuthError(err))
     } finally { setBusy(false) }
   }
+
+  const label = busy ? 'Please wait…'
+    : !NATIVE && mode === 'signup' ? 'Create account'
+    : mode === 'signin' ? 'Sign in'
+    : !NATIVE && mode === 'link' ? 'Email me a sign-in link'
+    : mode === 'code' ? (codeSent ? 'Sign in' : 'Email me a code')
+    : 'Send reset link'
 
   return (
     <>
@@ -45,24 +88,28 @@ export default function Auth() {
           Already use Energy Lab or Your Next Move? Sign in with the same email and password.
         </p>
       </div>
-      <div className="card">
-        {mode !== 'reset' && (
+      <div className="card" data-auth-mode={mode}>
+        {!NATIVE && (mode === 'signup' || mode === 'signin') && (
           <div className="segment" role="tablist">
-            <button type="button" className={mode === 'signup' ? 'on' : ''} onClick={() => setMode('signup')}>Create account</button>
-            <button type="button" className={mode === 'signin' ? 'on' : ''} onClick={() => setMode('signin')}>Sign in</button>
+            <button type="button" className={mode === 'signup' ? 'on' : ''} onClick={() => go('signup')}>Create account</button>
+            <button type="button" className={mode === 'signin' ? 'on' : ''} onClick={() => go('signin')}>Sign in</button>
           </div>
         )}
+        {NATIVE && mode === 'signin' && <h2>Sign in</h2>}
         {mode === 'reset' && <h2>Reset your password</h2>}
+        {!NATIVE && mode === 'link' && <h2>Sign in with an email link</h2>}
+        {NATIVE && mode === 'code' && <h2>Sign in with an email code</h2>}
         <form onSubmit={submit}>
-          {mode === 'signup' && (
+          {!NATIVE && mode === 'signup' && (
             <>
               <label htmlFor="name">Full name</label>
               <input id="name" type="text" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} />
             </>
           )}
           <label htmlFor="email">Email</label>
-          <input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-          {mode !== 'reset' && (
+          <input id="email" type="email" autoComplete="email" required value={email} readOnly={mode === 'code' && codeSent}
+            onChange={(e) => setEmail(e.target.value)} />
+          {(mode === 'signup' || mode === 'signin') && (
             <>
               <label htmlFor="pw">Password</label>
               <input id="pw" type="password" minLength={8} required
@@ -71,29 +118,40 @@ export default function Auth() {
               {mode === 'signup' && <div className="hint">At least 8 characters.</div>}
             </>
           )}
-          {error && <div className="error">{error}</div>}
+          {mode === 'code' && codeSent && (
+            <>
+              <label htmlFor="code">{OTP_LENGTH}-digit code</label>
+              <input id="code" type="text" inputMode="numeric" autoComplete="one-time-code" required
+                className="code-input" value={code} onChange={(e) => { setCode(normaliseCode(e.target.value, OTP_LENGTH).digits); setError('') }} />
+              <div className="hint" data-junk-hint>{JUNK_HINT}</div>
+            </>
+          )}
+          {error && <div className="error" role="alert">{error}</div>}
           {notice && <div className="notice">{notice}</div>}
-          <button className="btn block" style={{ marginTop: 16 }} disabled={busy}>
-            {busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'signin' ? 'Sign in' : 'Send reset link'}
-          </button>
+          <button className="btn block" style={{ marginTop: 16 }} disabled={busy}>{label}</button>
         </form>
-        <p className="center small" style={{ marginTop: 14, marginBottom: 0 }}>
-          {mode === 'reset'
-            ? <a href="#" onClick={(e) => { e.preventDefault(); setMode('signin') }}>Back to sign in</a>
-            : <a href="#" onClick={(e) => { e.preventDefault(); setMode('reset') }}>Forgot your password?</a>}
+        <p className="center small" style={{ marginTop: 14, marginBottom: 0, display: 'grid', gap: 8 }}>
+          {mode === 'signin' && (NATIVE
+            ? <a href="#" onClick={(e) => { e.preventDefault(); go('code') }}>Email me {codeLabel()} instead</a>
+            : <a href="#" onClick={(e) => { e.preventDefault(); go('link') }}>Email me a sign-in link instead</a>)}
+          {mode === 'code' && codeSent && (
+            <a href="#" onClick={(e) => { e.preventDefault(); setCodeSent(false); setCode(''); setNotice('') }}>Send a new code</a>
+          )}
+          {(mode === 'signup' || mode === 'signin')
+            ? <a href="#" onClick={(e) => { e.preventDefault(); go('reset') }}>Forgot your password?</a>
+            : <a href="#" onClick={(e) => { e.preventDefault(); go('signin') }}>Back to sign in</a>}
         </p>
       </div>
-      <p className="center small muted">
-        <a href="/">About the challenge</a> · Presented by Energy Lab Athletic Company
-      </p>
+      {NATIVE ? (
+        <p className="center small muted" data-enter-on-web>
+          No passport yet? Enter at <a href={webAppUrl('/')} target="_blank" rel="noopener noreferrer">{WEB_HOST}</a>
+        </p>
+      ) : (
+        <p className="center small muted">
+          <a href="/">About the challenge</a> · Presented by Energy Lab Athletic Company
+        </p>
+      )}
+      {NATIVE && <p className="center small muted">Presented by Energy Lab Athletic Company · <a href={WEB_ORIGIN} target="_blank" rel="noopener noreferrer">About the challenge</a></p>}
     </>
   )
-}
-
-function friendly(err) {
-  const m = String(err?.message || err)
-  if (/invalid login/i.test(m)) return 'That email and password don’t match. Try again, or reset your password.'
-  if (/already registered/i.test(m)) return 'That email already has an account. Sign in instead.'
-  if (/email not confirmed/i.test(m)) return 'Please confirm your email first. Check your inbox for the link.'
-  return m
 }

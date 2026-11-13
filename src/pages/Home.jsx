@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase.js'
 import { PROVINCES, stampUrl } from '../lib/provinces.js'
 import PassportBook from '../components/PassportBook.jsx'
 import { YNMPerk } from '../components/RCPartner.jsx'
+import EnterLink from '../components/EnterLink.jsx'
+import { NATIVE } from '../lib/platform.js'
 
 export default function Home() {
   const { passport, profile } = useApp()
@@ -19,7 +21,7 @@ function NoPassport({ name }) {
       <div className="card dark">
         <h1>Welcome{name ? `, ${name.split(' ')[0]}` : ''}</h1>
         <p>Run an officially timed road half marathon, marathon or ultra in each of South Africa’s nine provinces within 24 months. Every verified race unlocks that province’s stamp in your passport.</p>
-        <Link className="btn block" to="/enter">Enter the challenge</Link>
+        <EnterLink>Enter the challenge</EnterLink>
       </div>
       <h2>The stamps you’ll collect</h2>
       <div className="stamps">
@@ -42,7 +44,7 @@ function PendingPayment() {
     <div className="card">
       <h1>Almost there</h1>
       <p>Your entry is saved but we haven’t received payment yet. Your passport is issued as soon as PayFast confirms it, usually within a minute.</p>
-      <Link className="btn block" to="/enter">Continue to payment</Link>
+      <EnterLink>Continue to payment</EnterLink>
     </div>
   )
 }
@@ -66,7 +68,7 @@ function Passport({ passport }) {
       {passport.status === 'active' && (
         <Link className="btn block" to="/submit" style={{ marginTop: 10 }}>Add a race result</Link>
       )}
-      {['active', 'completed'].includes(passport.status) && <YNMPerk />}
+      {!NATIVE && ['active', 'completed'].includes(passport.status) && <YNMPerk />}
     </>
   )
 }

@@ -15,9 +15,15 @@ const ageOn = (dob, on = new Date()) => {
 }
 
 export default async (req) => {
+  const fee = Number(Netlify.env.get('RTBC_ENTRY_FEE_CENTS'))
+
+  // GET: the entry fee, for the /enter page (the same setting PayFast is sent below), so the price
+  // and the charity line on the page can never differ from what is charged. Public; no sign-in.
+  if (req.method === 'GET') {
+    return json({ fee_cents: Number.isInteger(fee) && fee > 0 ? fee : null })
+  }
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
-  const fee = Number(Netlify.env.get('RTBC_ENTRY_FEE_CENTS'))
   const merchantId = Netlify.env.get('PAYFAST_MERCHANT_ID')
   const merchantKey = Netlify.env.get('PAYFAST_MERCHANT_KEY')
   if (!Number.isInteger(fee) || fee <= 0 || !merchantId || !merchantKey)

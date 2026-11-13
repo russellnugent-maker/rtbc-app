@@ -17,6 +17,11 @@ import { readFile, stat } from 'node:fs/promises'
 import { extname, join, normalize } from 'node:path'
 import { chromium } from 'playwright'
 import { YNM_OFFER_URL } from '../src/lib/routes.js'
+import { BINAH_URL, BINAH_BACK_COVER_LINE } from '../src/lib/partners.js'
+
+// Set SCREENS_OUT=<folder> to also save a screenshot of each screen checked.
+const OUT = process.env.SCREENS_OUT
+const shot = (page, name) => OUT && page.screenshot({ path: join(OUT, `${name}.png`), fullPage: true })
 
 const ROOT = new URL('..', import.meta.url).pathname
 const PROJECT_REF = 'lkazcbvczleavcwlosrx'
@@ -72,7 +77,7 @@ function serve(dir, spaBase) {
 
 const json = (route, body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
 
-async function openSignedIn(ctx, base) {
+async function openSignedIn(ctx, base, { passport = PASSPORT, feeCents = 49900 } = {}) {
   const page = await ctx.newPage()
   const errors = []
   page.on('pageerror', (e) => errors.push(e.message))
@@ -83,7 +88,7 @@ async function openSignedIn(ctx, base) {
     if (p === '/auth/v1/user') return json(route, USER)
     if (p === '/auth/v1/token') return json(route, SESSION)
     if (p.startsWith('/rest/v1/profiles')) return json(route, PROFILE)          // maybeSingle
-    if (p.startsWith('/rest/v1/rtbc_passports')) return json(route, [PASSPORT])
+    if (p.startsWith('/rest/v1/rtbc_passports')) return json(route, passport ? [passport] : [])
     if (p.startsWith('/rest/v1/rtbc_submissions')) return json(route, [SUBMISSION])
     // POST creates the signed link; GET on that link is the image itself.
     if (p.startsWith('/storage/v1/object/sign/rtbc-photos/') && route.request().method() === 'POST') {
@@ -93,10 +98,17 @@ async function openSignedIn(ctx, base) {
     if (p.startsWith('/storage/v1/object/sign/')) return route.fulfill({ status: 200, contentType: 'image/png', body: PNG })
     return json(route, [])
   })
+  // The entry fee as rtbc-entry's GET returns it (feeCents 'fail' = the function errors).
+  const feeRequests = []
+  await page.route('**/.netlify/functions/rtbc-entry', (route) => {
+    feeRequests.push(route.request().method())
+    if (feeCents === 'fail') return route.fulfill({ status: 500, body: '' })
+    return json(route, { fee_cents: feeCents })
+  })
   // Store the session before the app boots, as a returning signed-in runner has it.
   await page.addInitScript(([key, s]) => { localStorage.setItem(key, s) }, [`sb-${PROJECT_REF}-auth-token`, JSON.stringify(SESSION)])
   await page.goto(base)
-  return { page, errors }
+  return { page, errors, feeRequests }
 }
 
 /** Wait for a selector; if it never shows, fail with the page's own errors (a blank screen says nothing). */
@@ -144,8 +156,33 @@ for (const b of BUILDS) {
     // The element that crashed: the YNM perk card under the booklet (web only).
     assert.equal(await page.locator(`a.ynm-perk[href="${YNM_OFFER_URL}"]`).count(), b.native ? 0 : 1, 'YNM perk card')
     // Back cover: the RunningCalendar card on both (proves the back cover rendered), YNM web only.
-    assert.equal(await page.locator('.back-cover a.partner-card:not(.ynm)').count(), 1, 'back cover rendered')
+    assert.equal(await page.locator('.back-cover a.partner-card[href^="https://runningcalendar.co.za/"]').count(), 1, 'back cover rendered')
     assert.equal(await page.locator(`.back-cover a.partner-card.ynm[href="${YNM_OFFER_URL}"]`).count(), b.native ? 0 : 1, 'back-cover YNM card')
+    // Charity Partner credit on the back cover, web AND app, linking to the Binah Legacy Center.
+    const binah = page.locator(`.back-cover a.partner-card.charity[href="${BINAH_URL}"]`)
+    assert.equal(await binah.count(), 1, 'Binah credit on the back cover')
+    const binahText = await binah.innerText()
+    assert.match(binahText, /CHARITY PARTNER/)
+    assert.ok(binahText.includes(BINAH_BACK_COVER_LINE), binahText)
+    const binahLogo = binah.locator('img[src$="partners/binah.jpg"]')
+    await binahLogo.evaluate((img) => img.decode())
+    assert.ok(await binahLogo.evaluate((img) => img.naturalWidth > 0), 'Binah logo loaded')
+    // Three partner cards still fit: the footer stays inside the back cover's frame.
+    const frame = await page.locator('.back-frame').boundingBox()
+    const foot = await page.locator('.back-foot').boundingBox()
+    assert.ok(foot.y + foot.height <= frame.y + frame.height + 0.5, `back-cover footer overflows (${foot.y + foot.height} > ${frame.y + frame.height})`)
+    if (OUT) {
+      // Turn to the last page, as a runner would, and capture the back cover.
+      // (The booklet first jumps to the new Free State stamp; let that land, then go to the end.)
+      await page.waitForTimeout(1500)
+      const dots = page.locator('button[aria-label^="Go to page "]')
+      await dots.nth((await dots.count()) - 1).click()
+      await page.locator('button[aria-label="Next page"]:disabled').waitFor({ timeout: 5_000 })
+      await page.waitForTimeout(500)
+      // Element shot: a full-page shot resizes the window, which moves the booklet off this page.
+      await page.locator('.back-cover').screenshot({ path: join(OUT, `${b.name}-passport-back.png`) })
+    }
+
     // Add a result is offered on an active passport.
     assert.equal(await page.getByRole('link', { name: 'Add a race result' }).count(), 1)
 
@@ -171,4 +208,46 @@ for (const b of BUILDS) {
     assert.deepEqual(errors, [])
     await ctx.close()
   })
+
+  test(`${b.name}: /enter shows the charity line from the server's fee on the web, and nothing in the app`, async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const { page, errors, feeRequests } = await openSignedIn(ctx, b.base() + 'enter', { passport: null, feeCents: 49900 })
+    await waitFor(page, errors, 'nav.tabs')
+    if (b.native) {
+      // No entry route in the app: it lands on Home, with no price, no line, no call for the fee.
+      await waitFor(page, errors, '[data-enter-on-web]')
+      assert.equal(await page.locator('[data-entry-charity]').count(), 0, 'no /enter line in the app')
+      assert.equal(await page.locator('[data-entry-price]').count(), 0, 'no price in the app')
+      assert.deepEqual(feeRequests, [])
+    } else {
+      await waitFor(page, errors, '[data-entry-charity]')
+      await page.locator('.entry-fee').waitFor({ timeout: 5_000 })
+      assert.equal((await page.locator('[data-entry-charity]').innerText()).trim(), 'R50 of your R499 entry goes to the Binah Legacy Center.')
+      assert.equal(await page.locator(`[data-entry-charity] a[href="${BINAH_URL}"]`).count(), 1)
+      assert.match(await page.locator('.entry-fee').innerText(), /R499/)
+      assert.deepEqual(feeRequests, ['GET'])
+      await shot(page, 'web-enter')
+    }
+    assert.deepEqual(errors, [])
+    await ctx.close()
+  })
 }
+
+test('web: /enter follows a price change, and drops the amount if the fee cannot be read', async () => {
+  for (const [feeCents, line, price] of [
+    [59900, 'R50 of your R599 entry goes to the Binah Legacy Center.', 'R599'],
+    ['fail', 'R50 of your entry goes to the Binah Legacy Center.', null],
+  ]) {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const { page, errors } = await openSignedIn(ctx, `${web.url}/app/enter`, { passport: null, feeCents })
+    await waitFor(page, errors, '[data-entry-charity]')
+    if (price) await page.locator('.entry-fee').waitFor({ timeout: 5_000 })
+    else await page.waitForLoadState('networkidle')
+    assert.equal((await page.locator('[data-entry-charity]').innerText()).trim(), line)
+    assert.equal(await page.locator('.entry-fee').count(), price ? 1 : 0)
+    if (price) assert.match(await page.locator('.entry-fee').innerText(), new RegExp(price))
+    else await shot(page, 'web-enter-no-fee')
+    assert.deepEqual(errors, [])
+    await ctx.close()
+  }
+})

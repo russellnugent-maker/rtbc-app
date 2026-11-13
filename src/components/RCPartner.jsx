@@ -1,4 +1,5 @@
 import { YNM_OFFER_URL } from '../lib/routes.js'
+import { BINAH_NAME } from '../lib/partners.js'
 
 // RunningCalendar.co.za — Official Race Finder Partner.
 // Logo taken from runningcalendar.co.za until Johan supplies the official artwork.
@@ -53,5 +54,15 @@ export function YNMPerk() {
       <span className="ynm-perk-offer"><b>50% off a year of YNM.</b> A plan built around each of your nine races, from your current fitness to race day.</span>
       <span className="ynm-perk-cta">Claim your 50% off ›</span>
     </a>
+  )
+}
+
+// Binah Legacy Center — Charity Partner. Shown in the store app too: a charity credit, not a purchase.
+export function BinahLockup() {
+  return (
+    <span className="binah-lockup">
+      <img src={`${BASE}partners/binah.jpg`} alt="" width="34" height="34" />
+      <span className="binah-word">{BINAH_NAME}</span>
+    </span>
   )
 }

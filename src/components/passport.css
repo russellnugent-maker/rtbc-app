@@ -202,3 +202,18 @@
 .pc-role { display: block; font: 700 7px/1 var(--body); letter-spacing: .2em; color: #2F6DBA; margin-bottom: 7px; }
 .pc-role.ynm { color: #E8490F; }
 .partner-card p { margin-top: 6px; }
+
+/* Binah Legacy Center: Charity Partner */
+.partner-card.charity { margin-top: 10px; background: #F6F3EC; border-left: 4px solid #2D6A3E; }
+.pc-role.charity { color: #2D6A3E; }
+/* Three partner cards (web: RunningCalendar, YNM, Binah) must fit the fixed back-cover page:
+   the two lower cards go compact and the QR shrinks. The app (no YNM card) keeps the roomier layout.
+   tests/screens.test.mjs fails if the footer leaves the frame. */
+.back-frame:has(.partner-card.ynm) { padding-top: 16px; padding-bottom: 14px; }
+.back-frame:has(.partner-card.ynm) .partner-card { margin-top: 8px; padding: 10px 14px 9px; }
+.back-frame:has(.partner-card.ynm) .partner-card:first-of-type { margin-top: 12px; }
+.back-frame:has(.partner-card.ynm) .partner-card p { margin-top: 4px; }
+.back-frame:has(.partner-card.ynm) .pc-role { margin-bottom: 5px; }
+.back-frame:has(.partner-card.ynm) .ynm-lockup img,
+.back-frame:has(.partner-card.ynm) .binah-lockup img { width: 28px; height: 28px; }
+.back-frame:has(.partner-card.ynm) .qr { width: 22%; margin-top: 8px; padding: 4px; }

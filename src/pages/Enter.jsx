@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useApp } from '../App.jsx'
 import { getRef } from '../lib/provinces.js'
+import { rand, entryCharityLead, BINAH_URL, BINAH_NAME } from '../lib/partners.js'
 
 export const TERMS_VERSION = '2026-11-draft'
 
@@ -25,6 +26,14 @@ export default function Enter() {
   const [board, setBoard] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  // The fee as the server charges it (rtbc-entry GET); null until known or if entries aren't open.
+  const [feeCents, setFeeCents] = useState(null)
+  useEffect(() => {
+    let live = true
+    fetch('/.netlify/functions/rtbc-entry').then((r) => (r.ok ? r.json() : {})).catch(() => ({}))
+      .then((d) => { if (live) setFeeCents(d?.fee_cents ?? null) })
+    return () => { live = false }
+  }, [])
 
   if (passport && passport.status !== 'pending_payment') return <Navigate to="/" />
 
@@ -93,6 +102,13 @@ export default function Enter() {
           <span>I am fit to take part, and I take part in the challenge, its races and related travel at my own risk.</span></label>
         <label className="check"><input type="checkbox" checked={board} onChange={(e) => setBoard(e.target.checked)} />
           <span>Optional: show my first name, surname initial and progress on the public finisher wall.</span></label>
+
+        <div className="entry-price" data-entry-price>
+          {rand(feeCents) && <p className="entry-fee"><span>Entry</span> <b>{rand(feeCents)}</b></p>}
+          <p className="entry-charity" data-entry-charity>
+            {entryCharityLead(feeCents)} <a href={BINAH_URL} target="_blank" rel="noopener noreferrer">{BINAH_NAME}</a>.
+          </p>
+        </div>
 
         {error && <div className="error">{error}</div>}
         <button className="btn block" style={{ marginTop: 10 }} disabled={busy}>{busy ? 'Opening PayFast…' : 'Continue to payment'}</button>

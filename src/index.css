@@ -127,3 +127,13 @@ input[type=text], input[type=email], input[type=password], input[type=date], inp
 .kv dt { color: var(--muted); font-size: .85rem; }
 .kv dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
 .code-input { font-size: 1.4rem; letter-spacing: .35em; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* /enter: price and the charity line under it */
+.entry-price { margin: 16px 0 4px; padding: 12px 14px; border-radius: 10px; background: #F3E9D2; }
+.entry-fee { margin: 0; display: flex; justify-content: space-between; align-items: baseline; font-size: .95rem; }
+.entry-fee b { font-size: 1.25rem; }
+.entry-charity { margin: 6px 0 0; font-size: .85rem; color: var(--muted); }
+.entry-fee + .entry-charity { border-top: 1px solid #D2B27066; padding-top: 6px; }
+.binah-lockup { display: inline-flex; align-items: center; gap: 10px; }
+.binah-lockup img { width: 34px; height: 34px; border-radius: 8px; border: 1px solid #E5DFD2; background: #fff; object-fit: cover; }
+.binah-word { font: 700 .95rem/1.1 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: #1E2A22; }

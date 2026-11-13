@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase.js'
 import { uploadPhoto, photoUrl } from '../lib/photos.js'
 import { PROVINCES, stampUrl, passportNo, fmtDate, fmtTime } from '../lib/provinces.js'
 import ResultForm from './ResultForm.jsx'
-import { RCLockup, RCBadge, RC_URL, YNMLockup } from './RCPartner.jsx'
+import { RCLockup, RCBadge, RC_URL, YNMLockup, BinahLockup } from './RCPartner.jsx'
+import { BINAH_URL, BINAH_BACK_COVER_LINE } from '../lib/partners.js'
 import { YNM_OFFER_URL } from '../lib/routes.js'
 import { NATIVE } from '../lib/platform.js'
 import './passport.css'
@@ -395,6 +396,11 @@ function BackCover() {
             <YNMLockup />
           </a>
         )}
+        <a className="partner-card charity" href={BINAH_URL} target="_blank" rel="noopener noreferrer" data-binah>
+          <small className="pc-role charity">CHARITY PARTNER</small>
+          <BinahLockup />
+          <p>{BINAH_BACK_COVER_LINE}</p>
+        </a>
         <div className="qr"><img src={`${BASE}partners/runningcalendar-qr.svg`} alt="QR code to runningcalendar.co.za" /></div>
         <div className="back-scan">Scan to find your next race</div>
         <div className="back-foot">RUN THE BELOVED COUNTRY<small>PRESENTED BY ENERGY LAB ATHLETIC COMPANY</small></div>

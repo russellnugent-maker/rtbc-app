@@ -6,10 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build --outDir dist/app --emptyOutDir && cp -r landing/. dist/",
+    "build:native": "vite build --mode native --outDir dist-native --emptyOutDir",
+    "test": "node --test 'src/**/*.test.js'",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:native": "node scripts/check-native-bundle.mjs"
   },
   "dependencies": {
+    "@capacitor/core": "8.4.2",
     "@supabase/supabase-js": "^2.119.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

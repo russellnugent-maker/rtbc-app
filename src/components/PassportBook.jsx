@@ -5,6 +5,7 @@ import { uploadPhoto, photoUrl } from '../lib/photos.js'
 import { PROVINCES, stampUrl, passportNo, fmtDate, fmtTime } from '../lib/provinces.js'
 import ResultForm from './ResultForm.jsx'
 import { RCLockup, RCBadge, RC_URL, YNMLockup, YNM_OFFER_URL } from './RCPartner.jsx'
+import { NATIVE } from '../lib/platform.js'
 import './passport.css'
 
 const BASE = import.meta.env.BASE_URL
@@ -387,10 +388,12 @@ function BackCover() {
           <RCLockup />
           <p>Find a qualifying half marathon, marathon or ultra in every province.</p>
         </a>
-        <a className="partner-card ynm" href={YNM_OFFER_URL} target="_blank" rel="noopener noreferrer">
-          <small className="pc-role ynm">TRAINING PARTNER · 50% OFF FOR RTBC RUNNERS</small>
-          <YNMLockup />
-        </a>
+        {!NATIVE && (
+          <a className="partner-card ynm" href={YNM_OFFER_URL} target="_blank" rel="noopener noreferrer">
+            <small className="pc-role ynm">TRAINING PARTNER · 50% OFF FOR RTBC RUNNERS</small>
+            <YNMLockup />
+          </a>
+        )}
         <div className="qr"><img src={`${BASE}partners/runningcalendar-qr.svg`} alt="QR code to runningcalendar.co.za" /></div>
         <div className="back-scan">Scan to find your next race</div>
         <div className="back-foot">RUN THE BELOVED COUNTRY<small>PRESENTED BY ENERGY LAB ATHLETIC COMPANY</small></div>

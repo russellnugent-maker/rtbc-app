@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useApp } from '../App.jsx'
 import { supabase } from '../lib/supabase.js'
 import { fmtDate, fmtTime } from '../lib/provinces.js'
+import EnterLink from '../components/EnterLink.jsx'
 
 export const STATUS = {
   pending: ['In review', 'warn'], flagged: ['In review', 'warn'],
@@ -26,7 +27,7 @@ export default function Results() {
       <h1>My results</h1>
       {params.get('sent') && <div className="notice">Thanks! Your result is in. We’ll email you once it’s checked, usually within 7 days.</div>}
       {!passport ? (
-        <div className="card"><p>Enter the challenge to start adding results.</p><Link className="btn" to="/enter">Enter the challenge</Link></div>
+        <div className="card"><p>Enter the challenge to start adding results.</p><EnterLink className="btn">Enter the challenge</EnterLink></div>
       ) : subs === null ? <div className="spinner" /> : subs.length === 0 ? (
         <div className="card"><p style={{ margin: 0 }}>No results yet. Run a qualifying race, then <Link to="/submit">add your result</Link>.</p></div>
       ) : (

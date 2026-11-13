@@ -8,7 +8,11 @@ import Submit from './pages/Submit.jsx'
 import Results from './pages/Results.jsx'
 import Enter from './pages/Enter.jsx'
 import Admin from './pages/Admin.jsx'
+import Account from './pages/Account.jsx'
+import { NATIVE } from './lib/platform.js'
+import { AUTH_CALLBACK_PATH } from './lib/routes.js'
 import Icon from './components/Icon.jsx'
+
 
 const Ctx = createContext(null)
 export const useApp = () => useContext(Ctx)
@@ -50,14 +54,14 @@ export default function App() {
           <div className="topbar-row">
             <img src={`${import.meta.env.BASE_URL}emblem.png`} alt="" />
             <Link to="/" className="title">RUN THE BELOVED COUNTRY</Link>
-            {session && <button onClick={() => supabase.auth.signOut()}>Sign out</button>}
+            {session && <Link to="/account" className="topbar-btn">Account</Link>}
           </div>
           {session && (
             <nav className="tabs" aria-label="Main">
               <NavLink to="/" end><Icon name="passport" />Passport</NavLink>
               <NavLink to="/races"><Icon name="race" />Find a race</NavLink>
               <NavLink to="/results"><Icon name="results" />My results</NavLink>
-              {isAdmin && <NavLink to="/admin"><Icon name="review" />Review</NavLink>}
+              {!NATIVE && isAdmin && <NavLink to="/admin"><Icon name="review" />Review</NavLink>}
             </nav>
           )}
         </header>
@@ -69,11 +73,13 @@ export default function App() {
           ) : (
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/enter" element={<Enter />} />
+              {!NATIVE && <Route path="/enter" element={<Enter />} />}
               <Route path="/races" element={<Races />} />
               <Route path="/submit" element={live ? <Submit /> : <Navigate to="/" />} />
               <Route path="/results" element={<Results />} />
-              <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" />} />
+              {!NATIVE && <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" />} />}
+              <Route path="/account" element={<Account />} />
+              <Route path={AUTH_CALLBACK_PATH} element={<Navigate to="/" replace />} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           )}

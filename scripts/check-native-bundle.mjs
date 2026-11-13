@@ -23,7 +23,7 @@ const ABSENT_IN_NATIVE = [
   ['review queue', 'Open certificate again'],
 ]
 const PRESENT_IN_NATIVE = [
-  ['6-digit code sign-in', 'Email me a 6-digit code instead'],
+  ['email code sign-in', '-digit code'],
   ['enter on the website', 'on the website'],
   ['web callback for auth emails', 'https://runthebelovedcountry.netlify.app'],
 ]

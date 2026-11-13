@@ -3,6 +3,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { friendlyAuthError, isNoAccountForOtp, linkError, normaliseCode, GENERIC } from './authErrors.js'
+import { OTP_LENGTH, codeLabel } from './authConfig.js'
 
 test('known failures get plain wording', () => {
   assert.match(friendlyAuthError({ message: 'Invalid login credentials', status: 400 }), /don’t match/)
@@ -29,9 +30,17 @@ test('a failed auth link in the URL becomes a plain line', () => {
   assert.equal(linkError('', ''), null)
 })
 
-test('the 6-digit code: pasted spaces and dashes are dropped; anything else is incomplete', () => {
-  assert.deepEqual(normaliseCode(' 123 456 '), { digits: '123456', valid: true })
-  assert.deepEqual(normaliseCode('123-456'), { digits: '123456', valid: true })
-  assert.equal(normaliseCode('12345').valid, false)
-  assert.equal(normaliseCode('1234567').digits, '123456')
+test('the email code: pasted spaces and dashes are dropped; the length comes from config', () => {
+  assert.equal(OTP_LENGTH, 8)   // the shared project's setting (13 Nov 2026)
+  assert.deepEqual(normaliseCode(' 1234 5678 ', OTP_LENGTH), { digits: '12345678', valid: true })
+  assert.deepEqual(normaliseCode('1234-5678', OTP_LENGTH), { digits: '12345678', valid: true })
+  assert.equal(normaliseCode('123456', OTP_LENGTH).valid, false)          // a 6-digit code is short
+  assert.equal(normaliseCode('123456789', OTP_LENGTH).digits, '12345678') // extra digits dropped
+  assert.deepEqual(normaliseCode('123 456', 6), { digits: '123456', valid: true })
+})
+
+test('the code is named with the right article', () => {
+  assert.equal(codeLabel(8), 'an 8-digit code')
+  assert.equal(codeLabel(6), 'a 6-digit code')
+  assert.equal(codeLabel(), 'an 8-digit code')
 })

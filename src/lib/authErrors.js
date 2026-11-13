@@ -37,8 +37,11 @@ export function linkError(hash = '', search = '') {
   return 'That link didn’t work. Send yourself a new one, or sign in with your password.'
 }
 
-/** The 6-digit email code: digits only (spaces and dashes from a paste are dropped). */
-export function normaliseCode(input) {
-  const digits = String(input || '').replace(/\D/g, '').slice(0, 6)
-  return { digits, valid: digits.length === 6 }
+/**
+ * The email code: digits only (spaces and dashes from a paste are dropped), at most `length`.
+ * `length` is the project's OTP length (src/lib/authConfig.js), passed in so this stays pure.
+ */
+export function normaliseCode(input, length) {
+  const digits = String(input || '').replace(/\D/g, '').slice(0, length)
+  return { digits, valid: digits.length === length }
 }

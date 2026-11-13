@@ -4,9 +4,10 @@ import { NATIVE } from '../lib/platform.js'
 import { authRedirectUrl, WEB_ORIGIN, webAppUrl } from '../lib/routes.js'
 import { friendlyAuthError, isNoAccountForOtp, normaliseCode } from '../lib/authErrors.js'
 import { landingLinkError } from '../lib/authLanding.js'
+import { OTP_LENGTH, codeLabel } from '../lib/authConfig.js'
 
 // Sign-in (build spec §2, Login). Web: create account, password, magic link, reset. App: password
-// or a 6-digit email code, and reset; no account creation (the app never creates accounts).
+// or an emailed code (OTP_LENGTH digits, src/lib/authConfig.js), and reset; no account creation (the app never creates accounts).
 const redirectTo = () => authRedirectUrl({ native: NATIVE, origin: window.location.origin, base: import.meta.env.BASE_URL })
 
 // signup | signin | link (web) | code (app) | reset
@@ -53,10 +54,10 @@ export default function Auth() {
       } else if (mode === 'code' && !codeSent) {
         await sendOtp(false)
         setCodeSent(true)
-        setNotice('If that email has an account, a 6-digit code is on its way.')
+        setNotice(`If that email has an account, ${codeLabel()} is on its way.`)
       } else if (mode === 'code') {
-        const { digits, valid } = normaliseCode(code)
-        if (!valid) { setError('Enter the 6 digits from the email.'); return }
+        const { digits, valid } = normaliseCode(code, OTP_LENGTH)
+        if (!valid) { setError(`Enter the ${OTP_LENGTH} digits from the email.`); return }
         const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: digits, type: 'email' })
         if (error) throw error
       } else {
@@ -119,9 +120,9 @@ export default function Auth() {
           )}
           {mode === 'code' && codeSent && (
             <>
-              <label htmlFor="code">6-digit code</label>
+              <label htmlFor="code">{OTP_LENGTH}-digit code</label>
               <input id="code" type="text" inputMode="numeric" autoComplete="one-time-code" required
-                className="code-input" value={code} onChange={(e) => { setCode(normaliseCode(e.target.value).digits); setError('') }} />
+                className="code-input" value={code} onChange={(e) => { setCode(normaliseCode(e.target.value, OTP_LENGTH).digits); setError('') }} />
             </>
           )}
           {error && <div className="error" role="alert">{error}</div>}
@@ -130,7 +131,7 @@ export default function Auth() {
         </form>
         <p className="center small" style={{ marginTop: 14, marginBottom: 0, display: 'grid', gap: 8 }}>
           {mode === 'signin' && (NATIVE
-            ? <a href="#" onClick={(e) => { e.preventDefault(); go('code') }}>Email me a 6-digit code instead</a>
+            ? <a href="#" onClick={(e) => { e.preventDefault(); go('code') }}>Email me {codeLabel()} instead</a>
             : <a href="#" onClick={(e) => { e.preventDefault(); go('link') }}>Email me a sign-in link instead</a>)}
           {mode === 'code' && codeSent && (
             <a href="#" onClick={(e) => { e.preventDefault(); setCodeSent(false); setCode(''); setNotice('') }}>Send a new code</a>

@@ -121,7 +121,7 @@ input[type=text], input[type=email], input[type=password], input[type=date], inp
 .ynm-perk-offer { display: block; font-size: .86rem; line-height: 1.45; margin: 9px 0 6px; color: #3d3730; }
 .ynm-perk-cta { font-weight: 800; font-size: .88rem; color: #E8490F; }
 
-/* Phase 1: account link in the top bar, account details, the 6-digit code field */
+/* Phase 1: account link in the top bar, account details, the email code field */
 .topbar .topbar-btn { border: 1px solid #ffffff33; color: var(--on-dark); border-radius: 8px; padding: 5px 10px; font-size: .8rem; text-decoration: none; }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0 0 12px; }
 .kv dt { color: var(--muted); font-size: .85rem; }

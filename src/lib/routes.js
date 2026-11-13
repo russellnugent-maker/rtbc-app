@@ -6,9 +6,18 @@
 // build-time NATIVE flag (src/lib/platform.js) so it is REMOVED from the bundle;
 // scripts/check-native-bundle.mjs proves it.
 
-/** The website. Every absolute URL the app needs is built from this (a custom domain changes it here). */
-export const WEB_ORIGIN = 'https://runthebelovedcountry.netlify.app'
+/**
+ * The production website. Every absolute address the app hands out is built from this: the link in
+ * auth emails sent from the app, "Enter … on the website", and the sign-in page's footer links.
+ * (On the web, auth emails use the page's own origin instead, so previews and `vite dev` work.)
+ * Custom domain from 13 Nov 2026; runthebelovedcountry.netlify.app still serves the same site.
+ */
+export const WEB_ORIGIN = 'https://runthebelovedcountry.co.za'
+export const WEB_HOST = new URL(WEB_ORIGIN).host
 export const WEB_APP_URL = `${WEB_ORIGIN}/app/`
+
+/** Your Next Move's RTBC offer (another site: it does not change with our domain). Web only. */
+export const YNM_OFFER_URL = 'https://yournextmove.run/#/rtbc'
 
 export const AUTH_CALLBACK_PATH = '/auth/callback'
 

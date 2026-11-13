@@ -9,3 +9,6 @@ export const OTP_LENGTH = Number.isInteger(fromEnv) && fromEnv >= 6 && fromEnv <
 
 /** "an 8-digit code", "a 6-digit code". */
 export const codeLabel = (n = OTP_LENGTH) => `${n === 8 ? 'an' : 'a'} ${n}-digit code`
+
+/** Added wherever the app says an email is on its way: iCloud files our sign-in emails as junk (13 Nov 2026). */
+export const JUNK_HINT = 'Can’t see it? Check your junk or spam folder.'

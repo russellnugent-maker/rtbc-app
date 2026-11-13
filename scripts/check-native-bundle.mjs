@@ -5,6 +5,7 @@
 import { execSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { WEB_ORIGIN } from '../src/lib/routes.js'
 
 const run = (cmd) => execSync(cmd, { stdio: 'pipe' })
 run('npm run build')
@@ -25,7 +26,7 @@ const ABSENT_IN_NATIVE = [
 const PRESENT_IN_NATIVE = [
   ['email code sign-in', '-digit code'],
   ['enter on the website', 'on the website'],
-  ['web callback for auth emails', 'https://runthebelovedcountry.netlify.app'],
+  ['web callback for auth emails', WEB_ORIGIN],
 ]
 
 let failed = 0

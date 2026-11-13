@@ -1,3 +1,4 @@
+import { JUNK_HINT } from './authConfig.js'
 // Runner-facing wording for auth failures. Never shows Supabase's own message, a status code or a
 // URL (standing rule): anything not recognised gets the generic line.
 
@@ -8,7 +9,7 @@ export function friendlyAuthError(err) {
   const status = Number(err?.status) || 0
   if (/invalid login/i.test(m)) return 'That email and password don’t match. Try again, or reset your password.'
   if (/already registered/i.test(m)) return 'That email already has an account. Sign in instead.'
-  if (/email not confirmed/i.test(m)) return 'Please confirm your email first. Check your inbox for the link.'
+  if (/email not confirmed/i.test(m)) return `Please confirm your email first. Check your inbox for the link. ${JUNK_HINT}`
   if (/token has expired|otp.*(expired|invalid)|invalid.*(token|otp)/i.test(m)) return 'That code is wrong or has expired. Check the latest email, or send a new code.'
   if (status === 429 || /rate limit|only request this after/i.test(m)) return 'Too many emails in a short time. Wait a minute, then try again.'
   if (/should be different/i.test(m)) return 'Choose a password different from your current one.'

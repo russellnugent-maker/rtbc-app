@@ -32,7 +32,7 @@ export function RCBadge() {
 }
 
 // YNM (Your Next Move) — Official Training Partner. Offer: 50% off one year, web only.
-export const YNM_OFFER_URL = 'https://yournextmove.run/#/rtbc'
+export { YNM_OFFER_URL } from '../lib/routes.js'
 
 export function YNMLockup({ size = 'md' }) {
   return (

@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { NATIVE } from '../lib/platform.js'
-import { authRedirectUrl, WEB_ORIGIN, webAppUrl } from '../lib/routes.js'
+import { authRedirectUrl, WEB_ORIGIN, WEB_HOST, webAppUrl } from '../lib/routes.js'
 import { friendlyAuthError, isNoAccountForOtp, normaliseCode } from '../lib/authErrors.js'
 import { landingLinkError } from '../lib/authLanding.js'
-import { OTP_LENGTH, codeLabel } from '../lib/authConfig.js'
+import { OTP_LENGTH, codeLabel, JUNK_HINT } from '../lib/authConfig.js'
 
 // Sign-in (build spec §2, Login). Web: create account, password, magic link, reset. App: password
 // or an emailed code (OTP_LENGTH digits, src/lib/authConfig.js), and reset; no account creation (the app never creates accounts).
@@ -44,17 +44,17 @@ export default function Auth() {
           options: { emailRedirectTo: redirectTo(), data: { full_name: name.trim(), app_source: 'rtbc' } },
         })
         if (error) throw error
-        if (!data.session) setNotice('Check your email and tap the link to confirm your account. Then come back here and sign in.')
+        if (!data.session) setNotice(`Check your email and tap the link to confirm your account. Then come back here and sign in. ${JUNK_HINT}`)
       } else if (mode === 'signin') {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
         if (error) throw error
       } else if (!NATIVE && mode === 'link') {
         await sendOtp(true)
-        setNotice('If that email has an account, a sign-in link is on its way. Open it on this device.')
+        setNotice(`If that email has an account, a sign-in link is on its way. Open it on this device. ${JUNK_HINT}`)
       } else if (mode === 'code' && !codeSent) {
         await sendOtp(false)
         setCodeSent(true)
-        setNotice(`If that email has an account, ${codeLabel()} is on its way.`)
+        setNotice(`If that email has an account, ${codeLabel()} is on its way.`) // the junk-folder line sits under the code box
       } else if (mode === 'code') {
         const { digits, valid } = normaliseCode(code, OTP_LENGTH)
         if (!valid) { setError(`Enter the ${OTP_LENGTH} digits from the email.`); return }
@@ -64,8 +64,8 @@ export default function Auth() {
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirectTo() })
         if (error) throw error
         setNotice(NATIVE
-          ? 'If that email has an account, a reset link is on its way. It opens the website; set your new password there, then sign in here.'
-          : 'If that email has an account, a reset link is on its way.')
+          ? `If that email has an account, a reset link is on its way. It opens the website; set your new password there, then sign in here. ${JUNK_HINT}`
+          : `If that email has an account, a reset link is on its way. ${JUNK_HINT}`)
       }
     } catch (err) {
       setError(friendlyAuthError(err))
@@ -123,6 +123,7 @@ export default function Auth() {
               <label htmlFor="code">{OTP_LENGTH}-digit code</label>
               <input id="code" type="text" inputMode="numeric" autoComplete="one-time-code" required
                 className="code-input" value={code} onChange={(e) => { setCode(normaliseCode(e.target.value, OTP_LENGTH).digits); setError('') }} />
+              <div className="hint" data-junk-hint>{JUNK_HINT}</div>
             </>
           )}
           {error && <div className="error" role="alert">{error}</div>}
@@ -143,7 +144,7 @@ export default function Auth() {
       </div>
       {NATIVE ? (
         <p className="center small muted" data-enter-on-web>
-          No passport yet? Enter at <a href={webAppUrl('/')} target="_blank" rel="noopener noreferrer">runthebelovedcountry.netlify.app</a>
+          No passport yet? Enter at <a href={webAppUrl('/')} target="_blank" rel="noopener noreferrer">{WEB_HOST}</a>
         </p>
       ) : (
         <p className="center small muted">

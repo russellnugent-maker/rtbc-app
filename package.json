@@ -8,6 +8,7 @@
     "build": "vite build --outDir dist/app --emptyOutDir && cp -r landing/. dist/",
     "build:native": "vite build --mode native --outDir dist-native --emptyOutDir",
     "test": "node --test 'src/**/*.test.js'",
+    "test:screens": "node --test tests/screens.test.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
     "check:native": "node scripts/check-native-bundle.mjs"
@@ -24,6 +25,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "oxlint": "^1.90.0",
+    "playwright": "1.65.0",
     "vite": "^8.3.6"
   }
 }

@@ -1,3 +1,5 @@
+import { YNM_OFFER_URL } from '../lib/routes.js'
+
 // RunningCalendar.co.za — Official Race Finder Partner.
 // Logo taken from runningcalendar.co.za until Johan supplies the official artwork.
 const BASE = import.meta.env.BASE_URL
@@ -32,7 +34,6 @@ export function RCBadge() {
 }
 
 // YNM (Your Next Move) — Official Training Partner. Offer: 50% off one year, web only.
-export { YNM_OFFER_URL } from '../lib/routes.js'
 
 export function YNMLockup({ size = 'md' }) {
   return (

@@ -18,8 +18,10 @@ export const WEB_APP_URL = `${WEB_ORIGIN}/app/`
 
 /** Your Next Move's RTBC offer (another site: it does not change with our domain). Web only. */
 export const YNM_OFFER_URL = 'https://yournextmove.run/#/rtbc'
-// YNM home page, used by the store app's partner credit (no offer or price in the app).
-export const YNM_HOME_URL = 'https://yournextmove.run/?utm_source=rtbc&utm_medium=app'
+// YNM in the app stores. The store app links here (never to the web offer or YNM's own checkout):
+// YNM sells its subscription in its own app, so the app store listing is the safe place to send people.
+export const YNM_APP_STORE_URL = 'https://apps.apple.com/za/app/id6794237930'
+export const YNM_PLAY_URL = 'https://play.google.com/store/apps/details?id=run.yournextmove.app'
 
 export const AUTH_CALLBACK_PATH = '/auth/callback'
 

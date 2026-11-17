@@ -174,15 +174,13 @@ for (const b of BUILDS) {
     // Back cover: the RunningCalendar card on both (proves the back cover rendered), YNM web only.
     assert.equal(await page.locator('.back-cover a.partner-card[href^="https://runningcalendar.co.za/"]').count(), 1, 'back cover rendered')
     assert.equal(await page.locator(`.back-cover a.partner-card.ynm[href="${YNM_OFFER_URL}"]`).count(), b.native ? 0 : 1, 'back-cover YNM card')
-    // App: YNM is credited as Official Training Partner, linking to the YNM home page only:
-    // never the RTBC discount page, and no offer or price on the card (store rules).
+    // App: YNM is credited as Official Training Partner, linking to YNM's App Store / Google Play
+    // listing only: never the web offer, and no offer or price on the card (store rules).
     if (b.native) {
       const credit = page.locator('.back-cover a.partner-card.ynm[data-ynm-credit]')
       assert.equal(await credit.count(), 1, 'YNM partner credit in the app')
       const href = await credit.getAttribute('href')
-      assert.match(href, /^https:\/\/yournextmove\.run\/\?/)
-      assert.ok(!href.includes('rtbc') || href.includes('utm_source=rtbc'), href)
-      assert.ok(!href.includes('#/rtbc'), 'app must not link to the RTBC offer page')
+      assert.match(href, /^https:\/\/(apps\.apple\.com\/.*id6794237930|play\.google\.com\/store\/apps\/details\?id=run\.yournextmove\.app)/, href)
       assert.doesNotMatch(await credit.innerText(), /%|\bR\d|\boff\b/i)
     }
     // Charity Partner credit on the back cover, web AND app, linking to the Binah Legacy Center.
@@ -210,6 +208,13 @@ for (const b of BUILDS) {
       await page.locator('.back-cover').screenshot({ path: join(OUT, `${b.name}-passport-back.png`) })
     }
 
+    // "Training plan" tab, next to Find a race: the web offer on the website, YNM's store listing in the app.
+    const plan = page.locator('nav.tabs a[data-training-plan]')
+    assert.equal(await plan.count(), 1, 'Training plan tab')
+    const planHref = await plan.getAttribute('href')
+    if (b.native) assert.match(planHref, /^https:\/\/(apps\.apple\.com|play\.google\.com)\//, planHref)
+    else assert.equal(planHref, YNM_OFFER_URL)
+    assert.deepEqual(await page.locator('nav.tabs a').allInnerTexts().then((t) => t.slice(0, 4).map((x) => x.trim())), ['Passport', 'Find a race', 'Training plan', 'My results'])
     // Add a result is offered on an active passport.
     assert.equal(await page.getByRole('link', { name: 'Add a race result' }).count(), 1)
 

@@ -9,7 +9,7 @@ import Results from './pages/Results.jsx'
 import Enter from './pages/Enter.jsx'
 import Admin from './pages/Admin.jsx'
 import Account from './pages/Account.jsx'
-import { NATIVE } from './lib/platform.js'
+import { NATIVE, TRAINING_URL } from './lib/platform.js'
 import { AUTH_CALLBACK_PATH } from './lib/routes.js'
 import Icon from './components/Icon.jsx'
 import PassportBook from './components/PassportBook.jsx'
@@ -127,6 +127,7 @@ export default function App() {
             <nav className="tabs" aria-label="Main">
               <NavLink to="/" end><Icon name="passport" />Passport</NavLink>
               <NavLink to="/races"><Icon name="race" />Find a race</NavLink>
+              <a href={TRAINING_URL} target="_blank" rel="noopener noreferrer" data-training-plan><Icon name="plan" />Training plan</a>
               <NavLink to="/results"><Icon name="results" />My results</NavLink>
               {!NATIVE && isAdmin && <NavLink to="/admin"><Icon name="review" />Review</NavLink>}
             </nav>

@@ -6,7 +6,8 @@ import { PROVINCES, stampUrl, passportNo, fmtDate, fmtTime } from '../lib/provin
 import ResultForm from './ResultForm.jsx'
 import { RCLockup, RCBadge, RC_URL, YNMLockup, BinahLockup } from './RCPartner.jsx'
 import { BINAH_URL, BINAH_BACK_COVER_LINE } from '../lib/partners.js'
-import { YNM_OFFER_URL, YNM_HOME_URL } from '../lib/routes.js'
+import { YNM_OFFER_URL } from '../lib/routes.js'
+import { TRAINING_URL } from '../lib/platform.js'
 import { NATIVE } from '../lib/platform.js'
 import { takeOrChoosePhoto } from '../lib/pickPhoto.js'
 import { useBackClose } from '../lib/backStack.js'
@@ -403,9 +404,9 @@ function BackCover() {
           <p>Find a qualifying half marathon, marathon or ultra in every province.</p>
         </a>
         {NATIVE ? (
-          // Store app: a partner credit that opens the YNM home page. No offer or price, and never the
-          // RTBC discount page: linking an app to a discounted digital subscription risks store rejection.
-          <a className="partner-card ynm" href={YNM_HOME_URL} target="_blank" rel="noopener noreferrer" data-ynm-credit>
+          // Store app: a partner credit that opens YNM in the App Store / Google Play. No offer or price,
+          // and never the web offer: YNM sells its subscription in its own app (store payment rules).
+          <a className="partner-card ynm" href={TRAINING_URL} target="_blank" rel="noopener noreferrer" data-ynm-credit>
             <small className="pc-role ynm">OFFICIAL TRAINING PARTNER</small>
             <YNMLockup />
           </a>

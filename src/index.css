@@ -28,6 +28,9 @@ main { flex: 1; width: 100%; max-width: 640px; margin: 0 auto; padding: 18px cal
 .tabs a svg { width: 24px; height: 24px; }
 .tabs a:hover { color: var(--on-dark); }
 .tabs a.active { color: var(--gold); border-bottom-color: var(--orange); background: linear-gradient(#ffffff00, #ffffff0d); }
+.tabs a { white-space: nowrap; }
+/* Four tabs (Passport, Find a race, Training plan, My results) on narrow phones: smaller text, less padding. */
+@media (max-width: 400px) { .tabs { padding: 0 4px; } .tabs a { font-size: .74rem; padding-left: 2px; padding-right: 2px; letter-spacing: 0; } }
 
 .card { background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
 .card.dark { background: var(--forest); color: var(--on-dark); border-color: var(--forest-2); }

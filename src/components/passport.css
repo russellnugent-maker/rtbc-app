@@ -217,3 +217,16 @@
 .back-frame:has(.partner-card.ynm) .ynm-lockup img,
 .back-frame:has(.partner-card.ynm) .binah-lockup img { width: 28px; height: 28px; }
 .back-frame:has(.partner-card.ynm) .qr { width: 22%; margin-top: 8px; padding: 4px; }
+
+/* RunningCalendar wordmark on the back cover: the card is narrow on a phone, so the lockup scales
+   with the page width instead of running past the card's right edge (seen on iPhone, 17 Nov). */
+.partner-card .rc-lockup { max-width: 100%; gap: 6px; justify-content: center; }
+.partner-card .rc-lockup img { width: clamp(24px, 7vw, 30px); height: clamp(24px, 7vw, 30px); flex: none; }
+.partner-card .rc-word { font-size: clamp(.8rem, 4.2vw, 1.05rem); min-width: 0; }
+/* Keep "Scan to find your next race" inside the frame on short phones. */
+.back-cover .qr { width: 30%; }
+/* Narrow phones (≤370px): the web back cover has three partner cards, so the QR shrinks a little more. */
+@media (max-width: 370px) {
+  .back-frame:has(.partner-card.ynm) .qr { width: 17%; margin-top: 6px; }
+  .back-frame:has(.partner-card.ynm) .partner-card p { font-size: 9.5px; }
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Universal links for runthebelovedcountry.co.za. Pairs with
+	     landing/.well-known/apple-app-site-association (TEAMID.com.energylab.passport, path
+	     /app/auth/callback only). BOTH sides are required; a mismatch fails silently and the link
+	     opens Safari. Needs Associated Domains enabled on the App ID; with automatic signing,
+	     Xcode adds it when this file is present. Sign-in stays on the 8-digit code for now. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:runthebelovedcountry.co.za</string>
+	</array>
+</dict>
+</plist>

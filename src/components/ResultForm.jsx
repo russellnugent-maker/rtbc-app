@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import { uploadPhoto } from '../lib/photos.js'
 import { PROVINCES, fmtDate, parseTime } from '../lib/provinces.js'
 import { qualifyingRaces } from '../pages/Races.jsx'
+import FileField from './FileField.jsx'
 
 const DISTANCES = [
   { label: 'Half marathon (21.1 km)', m: 21097 },
@@ -196,11 +197,11 @@ export default function ResultForm({ passport, session, province: fixedProvince,
       <label htmlFor="pu">Link to the official results</label>
       <input id="pu" type="url" placeholder="https://" value={proofUrl} onChange={(e) => setProofUrl(e.target.value)} />
       <label htmlFor="pf">Or upload your official finisher certificate</label>
-      <input id="pf" type="file" accept="image/jpeg,image/png,image/heic,application/pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+      <FileField id="pf" accept="image/jpeg,image/png,image/heic,application/pdf" allowPdf file={file} onChange={setFile} header="Your finisher certificate" />
       <div className="hint">Photo or PDF, up to 10 MB. GPS watch or app screenshots aren’t accepted.</div>
 
       <label htmlFor="md">Photo of your finisher’s medal <span className="muted" style={{ fontWeight: 500 }}>(optional)</span></label>
-      <input id="md" type="file" accept="image/*" onChange={(e) => setMedal(e.target.files?.[0] || null)} />
+      <FileField id="md" accept="image/*" file={medal} onChange={setMedal} header="Your finisher’s medal" />
       <div className="hint">It goes on this race’s page in your passport. You can add it later too.</div>
 
       {late && <div className="error">This race was more than 30 days ago. You can still submit, but late results may not be accepted (T&amp;Cs 3.4).</div>}

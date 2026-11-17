@@ -11,3 +11,16 @@
   from = "/app/*"
   to = "/app/index.html"
   status = 200
+
+# Universal links / App Links (phase 5). Apple's file has no extension, so Netlify would serve it
+# as application/octet-stream; iOS wants JSON. Both must be served as themselves at these exact
+# paths, never redirected. Placeholder left: PLAY_APP_SIGNING_SHA256 (assetlinks.json).
+[[headers]]
+  for = "/.well-known/apple-app-site-association"
+  [headers.values]
+    Content-Type = "application/json"
+
+[[headers]]
+  for = "/.well-known/assetlinks.json"
+  [headers.values]
+    Content-Type = "application/json"

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../App.jsx'
 import { supabase } from '../lib/supabase.js'
@@ -7,9 +7,14 @@ import PassportBook from '../components/PassportBook.jsx'
 import { YNMPerk } from '../components/RCPartner.jsx'
 import EnterLink from '../components/EnterLink.jsx'
 import { NATIVE } from '../lib/platform.js'
+import { nativeStore, updateSnapshot } from '../lib/offline.js'
+import { photoDataUrl } from '../lib/photos.js'
 
 export default function Home() {
   const { passport, profile } = useApp()
+  // Still loading (supabase-js retries a dropped read for ~7 s): never show "Enter the challenge"
+  // to someone who may well have a passport.
+  if (passport === undefined) return <div className="spinner" />
   if (!passport) return <NoPassport name={profile?.full_name} />
   if (passport.status === 'pending_payment') return <PendingPayment />
   return <Passport passport={passport} />
@@ -52,11 +57,17 @@ function PendingPayment() {
 function Passport({ passport }) {
   const { reload } = useApp()
   const [subs, setSubs] = useState(null)
+  const latest = useRef(passport)
+  useEffect(() => { latest.current = passport })
   const load = useCallback(() => {
     supabase.from('rtbc_submissions')
       .select('id, province, status, race_name, race_date, distance_m, finish_seconds, created_at, medal_photo_path, rc_event_id, rc_events(venue_town)')
       .eq('passport_id', passport.id).order('created_at', { ascending: true })
-      .then(({ data }) => setSubs(data || []))
+      .then(({ data, error }) => {
+        setSubs(data || [])
+        // Store app: keep the stamps and the passport photo on the phone for offline use.
+        if (NATIVE && !error) saveOffline(latest.current, data || [])
+      })
   }, [passport.id])
   useEffect(() => { load() }, [load])
 
@@ -71,4 +82,13 @@ function Passport({ passport }) {
       {!NATIVE && ['active', 'completed'].includes(passport.status) && <YNMPerk />}
     </>
   )
+}
+
+async function saveOffline(passport, subs) {
+  const store = await nativeStore()
+  await updateSnapshot(store, passport.user_id, { passport, subs })
+  if (passport.photo_path) {
+    const dataUrl = await photoDataUrl(passport.photo_path)
+    if (dataUrl) await updateSnapshot(store, passport.user_id, { photos: { [passport.photo_path]: dataUrl } })
+  }
 }

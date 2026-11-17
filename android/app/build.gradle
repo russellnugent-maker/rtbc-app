@@ -1,0 +1,108 @@
+apply plugin: 'com.android.application'
+
+// Release signing (phase 5), as in ynm-app. The upload key lives OUTSIDE the repo
+// (~/keystores/running-passport-upload.jks) and its passwords in android/local.properties
+// (gitignored) or the environment, never in git:
+//   RTBC_STORE_FILE, RTBC_STORE_PASSWORD, RTBC_KEY_ALIAS, RTBC_KEY_PASSWORD
+def rtbcLocalProps = new Properties()
+def rtbcLocalPropsFile = rootProject.file('local.properties')
+if (rtbcLocalPropsFile.exists()) {
+    rtbcLocalPropsFile.withInputStream { rtbcLocalProps.load(it) }
+}
+def rtbcSigningValue = { String key ->
+    def v = rtbcLocalProps.getProperty(key) ?: System.getenv(key)
+    return (v == null || v.trim().isEmpty()) ? null : v.trim()
+}
+def rtbcStoreFile = rtbcSigningValue('RTBC_STORE_FILE')?.replaceFirst('^~', System.getProperty('user.home'))
+def rtbcStorePassword = rtbcSigningValue('RTBC_STORE_PASSWORD')
+def rtbcKeyAlias = rtbcSigningValue('RTBC_KEY_ALIAS')
+def rtbcKeyPassword = rtbcSigningValue('RTBC_KEY_PASSWORD')
+def rtbcSigningReady = rtbcStoreFile && rtbcStorePassword && rtbcKeyAlias && rtbcKeyPassword
+
+android {
+    namespace = "com.energylab.passport"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.energylab.passport"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (rtbcSigningReady) {
+                storeFile file(rtbcStoreFile)
+                storePassword rtbcStorePassword
+                keyAlias rtbcKeyAlias
+                keyPassword rtbcKeyPassword
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (rtbcSigningReady) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+// Refuse to build an unsigned release rather than emit one quietly: Play only rejects it after
+// the upload.
+gradle.taskGraph.whenReady { graph ->
+    def wantsRelease = graph.allTasks.any {
+        it.project == project && (it.name == 'bundleRelease' || it.name == 'assembleRelease')
+    }
+    if (!wantsRelease) return
+    if (!rtbcSigningReady) {
+        throw new GradleException(
+            "Release signing is not configured.\n" +
+            "Set these in android/local.properties (gitignored) or the environment:\n" +
+            "  RTBC_STORE_FILE, RTBC_STORE_PASSWORD, RTBC_KEY_ALIAS, RTBC_KEY_PASSWORD\n" +
+            "Generate the upload key with:\n" +
+            "  keytool -genkeypair -v -keystore ~/keystores/running-passport-upload.jks \\\n" +
+            "    -keyalg RSA -keysize 2048 -validity 10000 -alias running-passport-upload"
+        )
+    }
+    if (!file(rtbcStoreFile).exists()) {
+        throw new GradleException("RTBC_STORE_FILE points at a keystore that does not exist:\n  ${rtbcStoreFile}")
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

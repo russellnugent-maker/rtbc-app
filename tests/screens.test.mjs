@@ -77,7 +77,12 @@ function serve(dir, spaBase) {
 
 const json = (route, body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
 
-async function openSignedIn(ctx, base, { passport = PASSPORT, feeCents = 49900 } = {}) {
+// rtbc-account (account deletion). The store app calls the production website cross-origin, so
+// the answers carry CORS headers like the real function's.
+const CONTEXT_DEFAULT = { deletion_scheduled_for: null, club_member: false, ynm_subscription: null }
+const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization, content-type' }
+
+async function openSignedIn(ctx, base, { passport = PASSPORT, feeCents = 49900, account = CONTEXT_DEFAULT } = {}) {
   const page = await ctx.newPage()
   const errors = []
   page.on('pageerror', (e) => errors.push(e.message))
@@ -98,6 +103,17 @@ async function openSignedIn(ctx, base, { passport = PASSPORT, feeCents = 49900 }
     if (p.startsWith('/storage/v1/object/sign/')) return route.fulfill({ status: 200, contentType: 'image/png', body: PNG })
     return json(route, [])
   })
+  const accountCalls = []
+  await page.route('**/.netlify/functions/rtbc-account', (route) => {
+    const r = route.request()
+    if (r.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
+    const body = r.postData() ? JSON.parse(r.postData()) : null
+    accountCalls.push({ method: r.method(), url: r.url(), auth: r.headers().authorization, body })
+    const out = r.method() === 'GET' ? account
+      : body?.action === 'request' ? { ok: true, scheduled_for: '2026-11-24T05:00:00.000Z', already_scheduled: false }
+      : { ok: true, scheduled_for: null, already_scheduled: false }
+    return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify(out) })
+  })
   // The entry fee as rtbc-entry's GET returns it (feeCents 'fail' = the function errors).
   const feeRequests = []
   await page.route('**/.netlify/functions/rtbc-entry', (route) => {
@@ -108,12 +124,12 @@ async function openSignedIn(ctx, base, { passport = PASSPORT, feeCents = 49900 }
   // Store the session before the app boots, as a returning signed-in runner has it.
   await page.addInitScript(([key, s]) => { localStorage.setItem(key, s) }, [`sb-${PROJECT_REF}-auth-token`, JSON.stringify(SESSION)])
   await page.goto(base)
-  return { page, errors, feeRequests }
+  return { page, errors, feeRequests, accountCalls }
 }
 
 /** Wait for a selector; if it never shows, fail with the page's own errors (a blank screen says nothing). */
-async function waitFor(page, errors, selector) {
-  try { await page.waitForSelector(selector, { timeout: 10_000 }) } catch (e) {
+async function waitFor(page, errors, selector, timeout = 10_000) {
+  try { await page.waitForSelector(selector, { timeout }) } catch (e) {
     assert.deepEqual(errors, [], `page errors while waiting for ${selector}`)
     throw e
   }
@@ -250,4 +266,244 @@ test('web: /enter follows a price change, and drops the amount if the fee cannot
     assert.deepEqual(errors, [])
     await ctx.close()
   }
+})
+
+// ── Phase 5: the store app ──────────────────────────────────────────────────────────────────────
+
+const OFFLINE_KEY = 'CapacitorStorage.rtbc_offline_v1'   // Capacitor Preferences' web storage key
+
+/** A page with Supabase unreachable, as with no signal (the app's own files are on the phone). */
+async function openNoSignal(ctx, base, { session, airplane = false } = {}) {
+  const page = await ctx.newPage()
+  // Airplane mode: the phone says so. Otherwise (patchy signal) only the requests fail.
+  if (airplane) await page.addInitScript(() => Object.defineProperty(Navigator.prototype, 'onLine', { get: () => false }))
+  const errors = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.route('**/*.supabase.co/**', (route) => route.abort('internetdisconnected'))
+  if (session) await page.addInitScript(([key, s]) => { localStorage.setItem(key, s) }, [`sb-${PROJECT_REF}-auth-token`, JSON.stringify(session)])
+  await page.goto(base)
+  return { page, errors }
+}
+
+test('native: with no signal the passport opens from the phone, read-only, photo included', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const base = `${native.url}/`
+
+  // 1. Online once: the passport, the stamps and the passport photo are saved on the phone.
+  const online = await openSignedIn(ctx, base)
+  await waitFor(online.page, online.errors, '[aria-roledescription="passport booklet"]')
+  await online.page.waitForFunction((k) => {
+    const s = JSON.parse(localStorage.getItem(k) || 'null')
+    return s && s.subs.length === 1 && Object.keys(s.photos || {}).length === 1
+  }, OFFLINE_KEY, { timeout: 10_000 })
+  const saved = JSON.parse(await online.page.evaluate((k) => localStorage.getItem(k), OFFLINE_KEY))
+  assert.equal(saved.userId, UID)
+  assert.equal(saved.passport.passport_no, 1)
+  assert.match(saved.photos[PHOTO], /^data:image\/png;base64,/)
+  assert.deepEqual(online.errors, [])
+  await online.page.close()
+
+  // 2a. Airplane mode: the saved copy at once, not after supabase-js's retries.
+  const air = await openNoSignal(ctx, base, { airplane: true })
+  const t0 = Date.now()
+  await waitFor(air.page, air.errors, '[data-offline]', 3_000)
+  assert.ok(Date.now() - t0 < 3_000)
+  await air.page.close()
+
+  // 2b. Patchy signal (requests fail, the phone thinks it is online), session still valid: a
+  // spinner while supabase-js retries (~7 s), never "Enter the challenge", then the saved passport
+  // with no tabs and nothing to add.
+  const off = await openNoSignal(ctx, base)
+  await off.page.waitForTimeout(1_500)
+  assert.equal(await off.page.getByText('Enter the challenge').count(), 0, 'no "Enter the challenge" while retrying')
+  assert.equal(await off.page.locator('main .spinner, .spinner').count(), 1, 'a spinner while retrying')
+  await waitFor(off.page, off.errors, '[data-offline]', 15_000)
+  assert.match(await off.page.locator('[data-offline]').innerText(), /You’re offline\. This is your passport as saved on \d{1,2} \w{3}, \d\d:\d\d\./)
+  const book = await off.page.locator('[aria-roledescription="passport booklet"]').innerText()
+  assert.match(book, /RTBC 00001/)
+  assert.match(book, /Bloemfontein Half Marathon/)                  // the stamp, from the saved copy
+  const photo = off.page.locator('img[src^="data:image/png"]').first()
+  await photo.waitFor({ timeout: 5_000 })
+  assert.ok(await photo.evaluate((img) => img.complete && img.naturalWidth > 0), 'saved passport photo shows offline')
+  assert.equal(await off.page.locator('nav.tabs').count(), 0, 'no tabs offline')
+  assert.equal(await off.page.getByRole('link', { name: 'Add a race result' }).count(), 0)
+  assert.ok(await off.page.locator('.id-photo').isDisabled(), 'no photo upload offline')
+  assert.equal(await off.page.locator('[data-auth-mode]').count(), 0, 'not sent to sign-in')
+  assert.deepEqual(off.errors, [])
+  await shot(off.page, 'native-offline')
+
+  // 3. Back online: Try again reloads the real passport, with tabs.
+  await off.page.unroute('**/*.supabase.co/**')
+  await off.page.route('**/*.supabase.co/**', (route) => {
+    const p = new URL(route.request().url()).pathname
+    if (p.startsWith('/rest/v1/profiles')) return json(route, PROFILE)
+    if (p.startsWith('/rest/v1/rtbc_passports')) return json(route, [PASSPORT])
+    if (p.startsWith('/rest/v1/rtbc_submissions')) return json(route, [SUBMISSION])
+    return json(route, [])
+  })
+  await off.page.getByRole('button', { name: 'Try again' }).click()
+  await waitFor(off.page, off.errors, 'nav.tabs')
+  assert.equal(await off.page.locator('[data-offline]').count(), 0)
+  await off.page.close()
+
+  // 4. No signal AND an expired token (the refresh can't reach the server): still the saved copy.
+  const expired = { ...SESSION, expires_at: Math.floor(Date.now() / 1000) - 600 }
+  const off2 = await openNoSignal(ctx, base, { session: expired })
+  const t1 = Date.now()
+  await waitFor(off2.page, off2.errors, '[data-offline]', 8_000)
+  assert.ok(Date.now() - t1 < 8_000, 'not held for the 30 s refresh retries')
+  assert.match(await off2.page.locator('[aria-roledescription="passport booklet"]').innerText(), /RTBC 00001/)
+  await off2.page.close()
+  await ctx.close()
+})
+
+test('native: signed out, or never signed in, with no signal → sign-in, never someone’s saved passport', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const { page, errors } = await openNoSignal(ctx, `${native.url}/`)
+  await waitFor(page, errors, '[data-auth-mode]')
+  assert.equal(await page.locator('[data-offline]').count(), 0)
+
+  // Signing out clears the copy on the phone.
+  const on = await openSignedIn(ctx, `${native.url}/`)
+  await waitFor(on.page, on.errors, '[aria-roledescription="passport booklet"]')
+  await on.page.waitForFunction((k) => !!localStorage.getItem(k), OFFLINE_KEY, { timeout: 10_000 })
+  await on.page.getByRole('link', { name: 'Account', exact: true }).click()
+  await on.page.getByRole('button', { name: 'Sign out' }).click()
+  await waitFor(on.page, on.errors, '[data-auth-mode]')
+  await on.page.waitForFunction((k) => !localStorage.getItem(k), OFFLINE_KEY, { timeout: 5_000 })
+  await ctx.close()
+})
+
+test('native: every link out of the app opens outside it (target=_blank, absolute https)', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const check = async (page, where) => {
+    const links = await page.locator('a[href^="http"], a[href^="mailto:"]').evaluateAll((as) => as.map((a) => ({ href: a.getAttribute('href'), target: a.getAttribute('target') })))
+    assert.ok(links.length > 0, `${where}: found links to check`)
+    for (const l of links) if (!l.href.startsWith('mailto:')) assert.equal(l.target, '_blank', `${where}: ${l.href}`)
+    return links.map((l) => l.href)
+  }
+  // Signed out: the sign-in page links to the website.
+  const out = await openNoSignal(ctx, `${native.url}/`)
+  await waitFor(out.page, out.errors, '[data-auth-mode]')
+  const authLinks = await check(out.page, 'sign-in')
+  assert.ok(authLinks.includes('https://runthebelovedcountry.co.za/app/'), 'Enter at … the website')
+  await out.page.close()
+  // No passport yet: "Enter the challenge on the website".
+  const np = await openSignedIn(ctx, `${native.url}/`, { passport: null })
+  await waitFor(np.page, np.errors, '[data-enter-on-web]')
+  assert.ok((await check(np.page, 'home, no passport')).includes('https://runthebelovedcountry.co.za/app/enter'))
+  await np.page.close()
+  // The passport: RunningCalendar and Binah on the back cover.
+  const pp = await openSignedIn(ctx, `${native.url}/`)
+  await waitFor(pp.page, pp.errors, '.back-cover')
+  const bookLinks = await check(pp.page, 'passport')
+  assert.ok(bookLinks.some((h) => h.startsWith('https://legacycenter.co.za')), 'Binah')
+  assert.ok(bookLinks.some((h) => h.startsWith('https://runningcalendar.co.za')), 'RunningCalendar')
+  await ctx.close()
+})
+
+test('native: the result form offers the camera or photo library, and a PDF for the certificate', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const { page, errors } = await openSignedIn(ctx, `${native.url}/`)
+  await waitFor(page, errors, '[aria-roledescription="passport booklet"]')
+  await page.getByRole('link', { name: 'Add a race result' }).click()   // a cold /submit goes home until the passport loads
+  await waitFor(page, errors, '#pf')
+  assert.equal(await page.locator('input#pf').count(), 0, 'no bare file input in the app')
+  assert.equal(await page.locator('#pf button', { hasText: 'Take or choose a photo' }).count(), 1)
+  assert.equal(await page.locator('#pf button', { hasText: 'Choose a PDF' }).count(), 1)
+  assert.equal(await page.locator('#md button', { hasText: 'Take or choose a photo' }).count(), 1)
+  assert.equal(await page.locator('#md button', { hasText: 'Choose a PDF' }).count(), 0)
+  await shot(page, 'native-submit')
+  assert.deepEqual(errors, [])
+  await ctx.close()
+})
+
+test('web: the result form keeps its plain file inputs', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const { page, errors } = await openSignedIn(ctx, `${web.url}/app/`)
+  await waitFor(page, errors, '[aria-roledescription="passport booklet"]')
+  await page.getByRole('link', { name: 'Add a race result' }).click()
+  await page.waitForSelector('input#pf[type=file]', { state: 'attached', timeout: 10_000 })
+  assert.equal(await page.locator('input#md[type=file]').count(), 1)
+  assert.equal(await page.locator('[data-file-field]').count(), 0)
+  await ctx.close()
+})
+
+for (const b of BUILDS) {
+  test(`${b.name}: delete my account warns plainly, needs DELETE typed, and asks the shared deletion`, async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const { page, errors, accountCalls } = await openSignedIn(ctx, b.base() + 'account', {
+      account: { deletion_scheduled_for: null, club_member: true, ynm_subscription: { source: 'apple' } },
+    })
+    await waitFor(page, errors, '[data-delete-panel]')
+    await page.getByRole('button', { name: 'Delete my account' }).click()
+    await waitFor(page, errors, '[data-delete-panel][data-open]')
+    await page.locator('[data-ynm-sub-warning]').waitFor({ timeout: 5_000 })
+
+    const panel = await page.locator('[data-delete-panel]').innerText()
+    assert.match(panel, /This also removes your Energy Lab and Your Next Move login\./)
+    assert.match(panel, /Energy Lab club membership/)
+    assert.match(await page.locator('[data-ynm-sub-warning]').innerText(), /active Your Next Move subscription[\s\S]*does not\s+cancel it[\s\S]*Settings → your name → Subscriptions/)
+    assert.match(panel, /RTBC 00001/)
+    assert.match(panel, /7 days to change your mind/)
+
+    const del = page.locator('[data-delete-panel] button.danger')
+    assert.ok(await del.isDisabled(), 'disabled until DELETE is typed')
+    await page.fill('#confirm-delete', 'delet')
+    assert.ok(await del.isDisabled())
+    await page.fill('#confirm-delete', 'delete')
+    assert.ok(await del.isEnabled())
+    await shot(page, `${b.name}-account-delete`)
+    await del.click()
+    await waitFor(page, errors, '[data-delete-scheduled]')
+    assert.match(await page.locator('[data-delete-scheduled]').innerText(), /permanently deleted on 24 Nov 2026/)
+
+    const posts = accountCalls.filter((c) => c.method === 'POST')
+    assert.deepEqual(posts.map((c) => c.body), [{ action: 'request' }])
+    assert.equal(posts[0].auth, `Bearer ${SESSION.access_token}`)
+    // The store app has no server of its own: it calls the production website.
+    if (b.native) assert.ok(posts[0].url.startsWith('https://runthebelovedcountry.co.za/.netlify/functions/rtbc-account'), posts[0].url)
+    else assert.ok(posts[0].url.startsWith(`${web.url}/.netlify/functions/rtbc-account`), posts[0].url)
+
+    await page.getByRole('button', { name: 'OK' }).click()
+    await waitFor(page, errors, '[data-auth-mode]')
+    assert.deepEqual(errors, [])
+    await ctx.close()
+  })
+}
+
+test('native: signed back in during the 7 days → Restore my account; a PayFast subscription is warned too', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const { page, errors, accountCalls } = await openSignedIn(ctx, `${native.url}/account`, {
+    account: { deletion_scheduled_for: '2026-11-24T05:00:00.000Z', club_member: false, ynm_subscription: null },
+  })
+  await waitFor(page, errors, '[data-delete-pending]')
+  assert.match(await page.locator('[data-delete-pending]').innerText(), /24 Nov 2026/)
+  await page.getByRole('button', { name: 'Restore my account' }).click()
+  await waitFor(page, errors, '[data-delete-panel]')
+  assert.deepEqual(accountCalls.filter((c) => c.method === 'POST').map((c) => c.body), [{ action: 'cancel' }])
+  await page.close()
+
+  const pf = await openSignedIn(ctx, `${native.url}/account`, { account: { deletion_scheduled_for: null, club_member: false, ynm_subscription: { source: 'payfast' } } })
+  await waitFor(pf.page, pf.errors, '[data-delete-panel]')
+  await pf.page.getByRole('button', { name: 'Delete my account' }).click()
+  await pf.page.locator('[data-ynm-sub-warning]').waitFor({ timeout: 5_000 })
+  assert.match(await pf.page.locator('[data-ynm-sub-warning]').innerText(), /in Your Next Move, or email support@energylabapp\.co\.za/)
+  assert.equal(await pf.page.locator('[data-delete-panel]').getByText('Energy Lab club membership').count(), 0)
+  await ctx.close()
+})
+
+test('native: the top bar and the page clear a notch and a home indicator (safe areas)', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const { page, errors } = await openSignedIn(ctx, `${native.url}/`)
+  // What Capacitor's SystemBars sets on Android (and env() gives on an iPhone with a notch).
+  await page.addStyleTag({ content: ':root { --safe-area-inset-top: 47px; --safe-area-inset-bottom: 34px; }' })
+  await waitFor(page, errors, '[aria-roledescription="passport booklet"]')
+  const row = await page.locator('.topbar-row').boundingBox()
+  assert.ok(row.y >= 47, `top bar content below the notch (y=${row.y})`)
+  const pad = await page.locator('main').evaluate((m) => parseFloat(getComputedStyle(m).paddingBottom))
+  assert.ok(pad >= 40 + 34, `page bottom clears the home indicator (${pad})`)
+  await shot(page, 'native-safe-area')
+  assert.deepEqual(errors, [])
+  await ctx.close()
 })

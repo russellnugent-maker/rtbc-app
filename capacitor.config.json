@@ -1,5 +1,27 @@
 {
   "appId": "com.energylab.passport",
   "appName": "Running Passport",
-  "webDir": "dist-native"
+  "webDir": "dist-native",
+  "backgroundColor": "#123A2C",
+  "ios": {
+    "backgroundColor": "#123A2C",
+    "contentInset": "never"
+  },
+  "android": {
+    "backgroundColor": "#123A2C"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "backgroundColor": "#123A2C",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP",
+      "splashFullScreen": false,
+      "splashImmersive": false
+    },
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "DARK"
+    }
+  }
 }

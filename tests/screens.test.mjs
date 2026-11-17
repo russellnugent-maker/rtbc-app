@@ -174,6 +174,13 @@ for (const b of BUILDS) {
     // Back cover: the RunningCalendar card on both (proves the back cover rendered), YNM web only.
     assert.equal(await page.locator('.back-cover a.partner-card[href^="https://runningcalendar.co.za/"]').count(), 1, 'back cover rendered')
     assert.equal(await page.locator(`.back-cover a.partner-card.ynm[href="${YNM_OFFER_URL}"]`).count(), b.native ? 0 : 1, 'back-cover YNM card')
+    // App: YNM is credited as Official Training Partner, with no link, offer or price (store rules).
+    if (b.native) {
+      const credit = page.locator('.back-cover [data-ynm-credit]')
+      assert.equal(await credit.count(), 1, 'YNM partner credit in the app')
+      assert.equal(await page.locator('.back-cover .partner-card.ynm a, .back-cover a.partner-card.ynm').count(), 0, 'YNM credit has no link')
+      assert.doesNotMatch(await credit.innerText(), /%|\bR\d|\boff\b/i)
+    }
     // Charity Partner credit on the back cover, web AND app, linking to the Binah Legacy Center.
     const binah = page.locator(`.back-cover a.partner-card.charity[href="${BINAH_URL}"]`)
     assert.equal(await binah.count(), 1, 'Binah credit on the back cover')

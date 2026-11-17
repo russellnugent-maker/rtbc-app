@@ -402,7 +402,14 @@ function BackCover() {
           <RCLockup />
           <p>Find a qualifying half marathon, marathon or ultra in every province.</p>
         </a>
-        {!NATIVE && (
+        {NATIVE ? (
+          // Store app: a partner credit only. No offer, price or link: the YNM offer is a digital
+          // subscription sold on the web, which the App Store and Google Play don't allow an app to link to.
+          <div className="partner-card ynm" data-ynm-credit>
+            <small className="pc-role ynm">OFFICIAL TRAINING PARTNER</small>
+            <YNMLockup />
+          </div>
+        ) : (
           <a className="partner-card ynm" href={YNM_OFFER_URL} target="_blank" rel="noopener noreferrer">
             <small className="pc-role ynm">TRAINING PARTNER · 50% OFF FOR RTBC RUNNERS</small>
             <YNMLockup />

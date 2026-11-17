@@ -52,6 +52,9 @@ export default function Account() {
       </div>
       <button className="btn secondary block" onClick={() => supabase.auth.signOut()}>Sign out</button>
       <DeleteAccount session={session} passport={passport} />
+      <p className="small muted" style={{ textAlign: 'center', marginTop: 18 }}>
+        <a href="https://runthebelovedcountry.co.za/privacy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+      </p>
     </>
   )
 }

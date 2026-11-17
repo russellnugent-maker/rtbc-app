@@ -8,6 +8,8 @@ import { RCLockup, RCBadge, RC_URL, YNMLockup, BinahLockup } from './RCPartner.j
 import { BINAH_URL, BINAH_BACK_COVER_LINE } from '../lib/partners.js'
 import { YNM_OFFER_URL } from '../lib/routes.js'
 import { NATIVE } from '../lib/platform.js'
+import { takeOrChoosePhoto } from '../lib/pickPhoto.js'
+import { useBackClose } from '../lib/backStack.js'
 import './passport.css'
 
 const BASE = import.meta.env.BASE_URL
@@ -32,8 +34,14 @@ function usePhoto(path) {
   return path ? url : null
 }
 
+/** Web: open the hidden file input. Store app: camera or photo library (src/lib/pickPhoto.js). */
+function pick(input, upload, header, onError) {
+  if (!NATIVE) { input.current?.click(); return }
+  takeOrChoosePhoto(header).then(upload, (e) => onError(e.message))
+}
+
 /** Booklet: cover · identity · journey · 9 stamp spaces filled in the order results are added · finisher */
-export default function PassportBook({ passport, subs, onChanged }) {
+export default function PassportBook({ passport, subs, onChanged, readOnly = false }) {
   const { session } = useApp()
   // Stamps go into the passport in the order the runner adds them, like a real passport
   const slots = subs.filter((s) => !['rejected', 'withdrawn'].includes(s.status))
@@ -41,15 +49,21 @@ export default function PassportBook({ passport, subs, onChanged }) {
   const byProv = Object.fromEntries(slots.map((s) => [s.province, s]))
   const done = slots.filter(isOk).length
   const finished = passport.status === 'completed'
-  const canAdd = passport.status === 'active'
+  // readOnly: the offline copy (no uploads or new results until the app is back online).
+  const canAdd = !readOnly && passport.status === 'active'
 
   const [sheet, setSheet] = useState(null) // province name for the result sheet
   const [viewer, setViewer] = useState(null) // photo url to view large
+  // Android back button closes these before it leaves the page (src/lib/backStack.js).
+  const closeSheet = useCallback(() => setSheet(null), [])
+  const closeViewer = useCallback(() => setViewer(null), [])
+  useBackClose(!!sheet, closeSheet)
+  useBackClose(!!viewer, closeViewer)
   const [gotoSub, setGotoSub] = useState(() => { try { return sessionStorage.getItem('rtbc_goto_sub') } catch { return null } })
 
   const pages = [
     { key: 'cover', el: <Cover /> },
-    { key: 'id', el: <Identity passport={passport} done={done} session={session} onChanged={onChanged} /> },
+    { key: 'id', el: <Identity passport={passport} done={done} session={session} onChanged={onChanged} readOnly={readOnly} /> },
     { key: 'journey', el: <Journey byProv={byProv} done={done} canAdd={canAdd} onAdd={setSheet} onOpen={(p) => go(pageOfSlot(slots.indexOf(byProv[p])))} /> },
     ...[0, 2, 4, 6, 8].map((k) => ({
       key: `s${k}`,
@@ -178,15 +192,14 @@ function Cover() {
   )
 }
 
-function Identity({ passport, done, session, onChanged }) {
+function Identity({ passport, done, session, onChanged, readOnly }) {
   const [first, ...rest] = passport.name_on_passport.split(/\s+/)
   const url = usePhoto(passport.photo_path)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const input = useRef(null)
 
-  const onFile = async (e) => {
-    const f = e.target.files?.[0]; e.target.value = ''
+  const upload = async (f) => {
     if (!f) return
     setBusy(true); setErr('')
     try {
@@ -203,14 +216,14 @@ function Identity({ passport, done, session, onChanged }) {
       <h2 className="pg-title">RACE PASSPORT</h2>
       <p className="pg-sub">This race passport belongs to</p>
       <div className="id-grid">
-        <button type="button" className={`id-photo ${url ? 'has' : ''}`} onClick={() => input.current?.click()} disabled={busy}
+        <button type="button" className={`id-photo ${url ? 'has' : ''}`} onClick={() => pick(input, upload, 'Your passport photo', setErr)} disabled={busy || readOnly}
           aria-label={url ? 'Change your passport photo' : 'Add your passport photo'}>
           {url ? <img className="face" src={url} alt="Runner" /> : (
             <span className="add-photo">{busy ? 'Uploading…' : <>＋<br />Add your<br />photo</>}</span>
           )}
           {url && <span className="change">{busy ? '…' : 'Change'}</span>}
         </button>
-        <input ref={input} type="file" accept="image/*" hidden onChange={onFile} />
+        {!NATIVE && <input ref={input} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; upload(f) }} />}
         <dl className="fields">
           <dt>First name</dt><dd>{first}</dd>
           <dt>Surname</dt><dd>{rest.join(' ') || '—'}</dd>
@@ -281,8 +294,7 @@ function MedalPhoto({ sub, session, onChanged, onView, editable }) {
   const url = usePhoto(sub.medal_photo_path)
   const input = useRef(null)
   const [busy, setBusy] = useState(false)
-  const onFile = async (e) => {
-    const f = e.target.files?.[0]; e.target.value = ''
+  const upload = async (f) => {
     if (!f) return
     setBusy(true)
     try {
@@ -296,10 +308,10 @@ function MedalPhoto({ sub, session, onChanged, onView, editable }) {
   if (!editable) return null
   return (
     <>
-      <button type="button" className="medal add" onClick={() => input.current?.click()} disabled={busy}>
+      <button type="button" className="medal add" onClick={() => pick(input, upload, 'Your finisher’s medal', (m) => m && alert(m))} disabled={busy}>
         {busy ? '…' : <>＋<br />Medal<br />photo</>}
       </button>
-      <input ref={input} type="file" accept="image/*" hidden onChange={onFile} />
+      {!NATIVE && <input ref={input} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; upload(f) }} />}
     </>
   )
 }
@@ -390,7 +402,14 @@ function BackCover() {
           <RCLockup />
           <p>Find a qualifying half marathon, marathon or ultra in every province.</p>
         </a>
-        {!NATIVE && (
+        {NATIVE ? (
+          // Store app: a partner credit only. No offer, price or link: the YNM offer is a digital
+          // subscription sold on the web, which the App Store and Google Play don't allow an app to link to.
+          <div className="partner-card ynm" data-ynm-credit>
+            <small className="pc-role ynm">OFFICIAL TRAINING PARTNER</small>
+            <YNMLockup />
+          </div>
+        ) : (
           <a className="partner-card ynm" href={YNM_OFFER_URL} target="_blank" rel="noopener noreferrer">
             <small className="pc-role ynm">TRAINING PARTNER · 50% OFF FOR RTBC RUNNERS</small>
             <YNMLockup />

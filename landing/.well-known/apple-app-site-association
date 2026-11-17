@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["SDC3U3BP3Z.com.energylab.passport"],
+        "components": [
+          {
+            "/": "/app/auth/callback*",
+            "comment": "Only the auth callback opens the app. Every other page, including /app/enter, must stay in the browser: the app links out to the website for entry."
+          }
+        ]
+      }
+    ]
+  }
+}

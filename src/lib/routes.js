@@ -33,3 +33,9 @@ export function authRedirectUrl({ native, origin, base = '/app/' }) {
   if (native) return webAppUrl(AUTH_CALLBACK_PATH)
   return `${origin}${base}${AUTH_CALLBACK_PATH.slice(1)}`
 }
+
+/**
+ * A Netlify function. The website calls its own origin (so previews and `vite dev` work); the
+ * store app has no server of its own, so it calls the production website.
+ */
+export const functionUrl = (name, { native = false } = {}) => `${native ? WEB_ORIGIN : ''}/.netlify/functions/${name}`

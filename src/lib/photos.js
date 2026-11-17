@@ -36,3 +36,18 @@ export async function photoUrl(path) {
   if (data?.signedUrl) cache.set(path, { url: data.signedUrl, exp: Date.now() + 50 * 60 * 1000 })
   return data?.signedUrl || null
 }
+
+/** Offline (store app): serve a saved copy of a photo with no network. */
+export function primeOfflinePhoto(path, dataUrl) {
+  if (path && dataUrl) cache.set(path, { url: dataUrl, exp: Number.MAX_SAFE_INTEGER })
+}
+
+/** The photo as a data URL, to keep on the device for offline use. null if it can't be fetched. */
+export async function photoDataUrl(path) {
+  try {
+    const url = await photoUrl(path)
+    if (!url || url.startsWith('data:')) return url
+    const blob = await (await fetch(url)).blob()
+    return await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => ok(null); r.readAsDataURL(blob) })
+  } catch { return null }
+}

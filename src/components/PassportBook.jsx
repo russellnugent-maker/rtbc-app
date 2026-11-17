@@ -6,7 +6,7 @@ import { PROVINCES, stampUrl, passportNo, fmtDate, fmtTime } from '../lib/provin
 import ResultForm from './ResultForm.jsx'
 import { RCLockup, RCBadge, RC_URL, YNMLockup, BinahLockup } from './RCPartner.jsx'
 import { BINAH_URL, BINAH_BACK_COVER_LINE } from '../lib/partners.js'
-import { YNM_OFFER_URL } from '../lib/routes.js'
+import { YNM_OFFER_URL, YNM_HOME_URL } from '../lib/routes.js'
 import { NATIVE } from '../lib/platform.js'
 import { takeOrChoosePhoto } from '../lib/pickPhoto.js'
 import { useBackClose } from '../lib/backStack.js'
@@ -403,12 +403,12 @@ function BackCover() {
           <p>Find a qualifying half marathon, marathon or ultra in every province.</p>
         </a>
         {NATIVE ? (
-          // Store app: a partner credit only. No offer, price or link: the YNM offer is a digital
-          // subscription sold on the web, which the App Store and Google Play don't allow an app to link to.
-          <div className="partner-card ynm" data-ynm-credit>
+          // Store app: a partner credit that opens the YNM home page. No offer or price, and never the
+          // RTBC discount page: linking an app to a discounted digital subscription risks store rejection.
+          <a className="partner-card ynm" href={YNM_HOME_URL} target="_blank" rel="noopener noreferrer" data-ynm-credit>
             <small className="pc-role ynm">OFFICIAL TRAINING PARTNER</small>
             <YNMLockup />
-          </div>
+          </a>
         ) : (
           <a className="partner-card ynm" href={YNM_OFFER_URL} target="_blank" rel="noopener noreferrer">
             <small className="pc-role ynm">TRAINING PARTNER · 50% OFF FOR RTBC RUNNERS</small>

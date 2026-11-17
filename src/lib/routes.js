@@ -18,6 +18,8 @@ export const WEB_APP_URL = `${WEB_ORIGIN}/app/`
 
 /** Your Next Move's RTBC offer (another site: it does not change with our domain). Web only. */
 export const YNM_OFFER_URL = 'https://yournextmove.run/#/rtbc'
+// YNM home page, used by the store app's partner credit (no offer or price in the app).
+export const YNM_HOME_URL = 'https://yournextmove.run/?utm_source=rtbc&utm_medium=app'
 
 export const AUTH_CALLBACK_PATH = '/auth/callback'
 

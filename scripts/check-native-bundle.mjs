@@ -1,6 +1,7 @@
 // npm run check:native — builds both bundles and proves the store app leaves out what the build
 // spec says it must (§1: the app never sells anything and never creates accounts; §2: the YNM
-// offer is not linked or mentioned). Each "must have" anchor proves the search ran on the right
+// offer is not linked or mentioned. Since 17 Nov the app may link to the YNM home page as a partner
+// credit, so the check looks for the offer route, not the domain). Each "must have" anchor proves the search ran on the right
 // files: a check that finds nothing because it looked in the wrong place would pass silently.
 import { execSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
@@ -16,7 +17,7 @@ const web = read('dist/app/assets')
 const native = read('dist-native/assets')
 
 const ABSENT_IN_NATIVE = [
-  ['YNM offer link', 'yournextmove.run'],
+  ['YNM offer link', 'yournextmove.run/#/rtbc'],
   ['YNM 50% offer', '50% off'],
   ['account creation', 'Create account'],
   ['magic link', 'Email me a sign-in link'],

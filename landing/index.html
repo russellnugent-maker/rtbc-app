@@ -102,6 +102,16 @@ footer .store-badge img { height: 40px; width: auto; }
 .hero .store-badge { margin-top: 0; }
 .store-badge.soon { position: relative; cursor: default; }
 .store-badge.soon small { position: absolute; bottom: calc(100% + 4px); right: 0; background: var(--orange); color: #1F2A24; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; line-height: 1; padding: 4px 7px; border-radius: 10px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.beta-link { color: var(--gold); font-size: 14px; font-weight: 600; text-underline-offset: 3px; }
+.beta-link:hover { color: #ECE0C4; }
+.beta { margin: -6px 0 34px; padding: 22px 24px; background: var(--paper); border: 1px solid var(--rule); border-left: 4px solid var(--orange); border-radius: 4px; max-width: 760px; scroll-margin-top: 84px; }
+.beta h3 { font-size: 18px; color: var(--forest); margin-bottom: 8px; }
+.beta p { color: var(--muted); font-size: 14px; }
+.beta ol { list-style: none; padding: 0; margin: 16px 0; display: flex; flex-wrap: wrap; gap: 14px 20px; }
+.beta li { display: flex; flex-direction: column; gap: 6px; }
+.beta li span { font-size: 13px; color: var(--muted); }
+.beta .btn { min-height: 42px; font-size: 13px; }
+.beta-note { font-size: 13px !important; }
 
 .pages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
 @media (max-width: 860px) { .pages { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -237,6 +247,7 @@ footer p { max-width: 60ch; }
       <a class="btn btn-ghost" href="#how">How it works</a>
     </div>
     <div class="stores"><a class="store-badge " href="https://apps.apple.com/app/id6835716723" target="_blank" rel="noopener"><img src="img/app-store-badge.svg" alt="Download Running Passport on the App Store" width="144" height="48"></a><span class="store-badge soon" role="img" aria-label="Google Play: coming soon"><img src="img/google-play-badge.png" alt="" width="161" height="48"><small>Coming soon</small></span></div>
+    <a class="beta-link" href="#beta">On Android? Become a beta tester</a>
     <img class="shot" src="img/hero.png" alt="The race passport: green cover beside an open spread with the Western Cape and Eastern Cape stamps applied" width="1600" height="843">
   </div>
 </header>
@@ -284,6 +295,15 @@ footer p { max-width: 60ch; }
       <div class="app-get">
         <div class="stores"><a class="store-badge " href="https://apps.apple.com/app/id6835716723" target="_blank" rel="noopener"><img src="img/app-store-badge.svg" alt="Download Running Passport on the App Store" width="144" height="48"></a><span class="store-badge soon" role="img" aria-label="Google Play: coming soon"><img src="img/google-play-badge.png" alt="" width="161" height="48"><small>Coming soon</small></span></div>
         <p>Free on iPhone, with Android coming soon. Enter on this website, then sign in to the app with the same email to carry your passport on race day.</p>
+      </div>
+      <div class="beta" id="beta">
+        <h3>Become an Android beta tester</h3>
+        <p>Running Passport for Android is in testing on Google Play. Use the Google account on your Android phone for both steps.</p>
+        <ol>
+          <li><a class="btn btn-solid" href="https://groups.google.com/g/running-passport-testers" target="_blank" rel="noopener">1. Join the tester group</a><span>Tap “Join group”.</span></li>
+          <li><a class="btn btn-solid" href="https://play.google.com/apps/testing/com.energylab.passport" target="_blank" rel="noopener">2. Join the test</a><span>Tap “Become a tester”, then install from Google Play.</span></li>
+        </ol>
+        <p class="beta-note">Already registered your interest? You may already be on the list, so try step 2 first. Feedback to <a href="mailto:support@energylabapp.co.za">support@energylabapp.co.za</a>.</p>
       </div>
       <div class="pages">
         <figure><img class="page-img" src="img/cover.jpg" alt="Passport front cover" width="700" height="994" loading="lazy"><figcaption><b>The cover</b>Your passport for the whole journey.</figcaption></figure>

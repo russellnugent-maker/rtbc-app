@@ -89,6 +89,13 @@ section { padding-block: 64px; }
 .steps h3 { font-size: 15px; color: var(--forest); letter-spacing: .1em; text-transform: uppercase; }
 .steps p { font-size: 15px; color: var(--muted); }
 .costs { margin-top: 26px; font-size: 14px; color: var(--muted); }
+/* App Store badge: Apple's official artwork, unaltered, min 40px tall with clear space */
+.store-badge { display: inline-block; line-height: 0; border-radius: 9px; }
+.store-badge img { height: 48px; width: auto; }
+.hero .store-badge { margin-top: 6px; }
+.app-get { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 30px; }
+.app-get p { color: var(--muted); font-size: 14px; max-width: 46ch; }
+footer .store-badge img { height: 40px; width: auto; }
 
 .pages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
 @media (max-width: 860px) { .pages { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -223,6 +230,7 @@ footer p { max-width: 60ch; }
       <a class="btn btn-solid" href="#register">Register your interest</a>
       <a class="btn btn-ghost" href="#how">How it works</a>
     </div>
+    <a class="store-badge " href="https://apps.apple.com/app/id6835716723" target="_blank" rel="noopener"><img src="img/app-store-badge.svg" alt="Download Running Passport on the App Store" width="144" height="48"></a>
     <img class="shot" src="img/hero.png" alt="The race passport: green cover beside an open spread with the Western Cape and Eastern Cape stamps applied" width="1600" height="843">
   </div>
 </header>
@@ -265,7 +273,11 @@ footer p { max-width: 60ch; }
       <div class="head">
         <span class="eyebrow">The race passport</span>
         <h2>On your phone for the journey, in print when you finish</h2>
-        <p>Your passport lives in the Run the Beloved Country web app, with your number, dates and stamps. Finish all nine provinces and we send you the printed edition: a forest-green booklet with your nine races, dates and times filled in.</p>
+        <p>Your passport lives in the Running Passport app and the Run the Beloved Country web app, with your number, dates and stamps. Finish all nine provinces and we send you the printed edition: a forest-green booklet with your nine races, dates and times filled in.</p>
+      </div>
+      <div class="app-get">
+        <a class="store-badge " href="https://apps.apple.com/app/id6835716723" target="_blank" rel="noopener"><img src="img/app-store-badge.svg" alt="Download Running Passport on the App Store" width="144" height="48"></a>
+        <p>Free on iPhone. Enter on this website, then sign in to the app with the same email to carry your passport on race day.</p>
       </div>
       <div class="pages">
         <figure><img class="page-img" src="img/cover.jpg" alt="Passport front cover" width="700" height="994" loading="lazy"><figcaption><b>The cover</b>Your passport for the whole journey.</figcaption></figure>
@@ -393,6 +405,7 @@ footer p { max-width: 60ch; }
 <footer>
   <div class="wrap">
     <img src="img/logo.png" alt="Energy Lab Athletic Company" width="476" height="360">
+    <a class="store-badge " href="https://apps.apple.com/app/id6835716723" target="_blank" rel="noopener"><img src="img/app-store-badge.svg" alt="Download Running Passport on the App Store" width="120" height="40"></a>
     <p>Run the Beloved Country is an independent running challenge presented by Energy Lab Athletic Company · energylabapp.co.za. Details, artwork and dates may change before launch. The race passport is a running collectible and not an official travel document. <a href="/privacy/" style="color:inherit">Privacy Policy</a></p>
   </div>
 </footer>

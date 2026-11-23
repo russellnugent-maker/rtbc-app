@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { NATIVE } from '../lib/platform.js'
 import { authRedirectUrl, WEB_ORIGIN, WEB_HOST, webAppUrl } from '../lib/routes.js'
-import { friendlyAuthError, isNoAccountForOtp, normaliseCode } from '../lib/authErrors.js'
+import { friendlyAuthError, isNoAccountForOtp, noAccountMessage, normaliseCode } from '../lib/authErrors.js'
 import { landingLinkError } from '../lib/authLanding.js'
 import { OTP_LENGTH, codeLabel, JUNK_HINT } from '../lib/authConfig.js'
 
@@ -21,22 +21,28 @@ export default function Auth() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(landingLinkError || '')
   const [notice, setNotice] = useState('')
+  const [noAccount, setNoAccount] = useState(false)
 
-  const go = (m) => { setMode(m); setError(''); setNotice(''); setCodeSent(false); setCode('') }
+  const go = (m) => { setMode(m); setError(''); setNotice(''); setNoAccount(false); setCodeSent(false); setCode('') }
 
-  // A code or link for an email: shouldCreateUser false, so it never makes an account. An email
-  // with no account gets the same notice as one that has one.
+  // A code or link for an email: shouldCreateUser false, so it never makes an account. Returns
+  // false (and says so on screen) when the email has no account, so the runner isn't left waiting.
   const sendOtp = async (withLink) => {
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: { shouldCreateUser: false, ...(withLink ? { emailRedirectTo: redirectTo() } : {}) },
     })
-    if (error && !isNoAccountForOtp(error)) throw error
+    if (error && isNoAccountForOtp(error)) {
+      setError(noAccountMessage(email, NATIVE)); setNoAccount(true)
+      return false
+    }
+    if (error) throw error
+    return true
   }
 
   const submit = async (e) => {
     e.preventDefault()
-    setError(''); setNotice(''); setBusy(true)
+    setError(''); setNotice(''); setNoAccount(false); setBusy(true)
     try {
       if (!NATIVE && mode === 'signup') {
         const { data, error } = await supabase.auth.signUp({
@@ -49,12 +55,12 @@ export default function Auth() {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
         if (error) throw error
       } else if (!NATIVE && mode === 'link') {
-        await sendOtp(true)
-        setNotice(`If that email has an account, a sign-in link is on its way. Open it on this device. ${JUNK_HINT}`)
+        if (await sendOtp(true)) setNotice(`A sign-in link is on its way. Open it on this device. ${JUNK_HINT}`)
       } else if (mode === 'code' && !codeSent) {
-        await sendOtp(false)
-        setCodeSent(true)
-        setNotice(`If that email has an account, ${codeLabel()} is on its way.`) // the junk-folder line sits under the code box
+        if (await sendOtp(false)) {
+          setCodeSent(true)
+          setNotice(`${codeLabel()[0].toUpperCase()}${codeLabel().slice(1)} is on its way.`) // the junk-folder line sits under the code box
+        }
       } else if (mode === 'code') {
         const { digits, valid } = normaliseCode(code, OTP_LENGTH)
         if (!valid) { setError(`Enter the ${OTP_LENGTH} digits from the email.`); return }
@@ -127,6 +133,9 @@ export default function Auth() {
             </>
           )}
           {error && <div className="error" role="alert">{error}</div>}
+          {noAccount && (NATIVE
+            ? <p className="center small" data-no-account style={{ marginTop: 8 }}><a href={webAppUrl('/')} target="_blank" rel="noopener noreferrer">Enter at {WEB_HOST}</a></p>
+            : <p className="center small" data-no-account style={{ marginTop: 8 }}><a href="#" onClick={(e) => { e.preventDefault(); go('signup') }}>Create an account</a></p>)}
           {notice && <div className="notice">{notice}</div>}
           <button className="btn block" style={{ marginTop: 16 }} disabled={busy}>{label}</button>
         </form>

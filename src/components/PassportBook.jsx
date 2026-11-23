@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.js'
 import { uploadPhoto, photoUrl } from '../lib/photos.js'
 import { PROVINCES, stampUrl, passportNo, fmtDate, fmtTime } from '../lib/provinces.js'
 import ResultForm from './ResultForm.jsx'
+import ShareStamp from './ShareStamp.jsx'
 import { RCLockup, RCBadge, RC_URL, YNMLockup, BinahLockup } from './RCPartner.jsx'
 import { BINAH_URL, BINAH_BACK_COVER_LINE } from '../lib/partners.js'
 import { YNM_OFFER_URL } from '../lib/routes.js'
@@ -68,11 +69,11 @@ export default function PassportBook({ passport, subs, onChanged, readOnly = fal
     { key: 'journey', el: <Journey byProv={byProv} done={done} canAdd={canAdd} onAdd={setSheet} onOpen={(p) => go(pageOfSlot(slots.indexOf(byProv[p])))} /> },
     ...[0, 2, 4, 6, 8].map((k) => ({
       key: `s${k}`,
-      el: <StampPage first={k} slots={slots} passport={passport} canAdd={canAdd} session={session}
+      el: <StampPage first={k} slots={slots} done={done} passport={passport} canAdd={canAdd} session={session}
         onChanged={onChanged} onAdd={() => go(2)} onView={setViewer} />,
       watch: [slots[k], slots[k + 1]].filter(Boolean).map((s) => s.province),
     })),
-    { key: 'finish', el: <Finisher finished={finished} passport={passport} />, watch: ['__finisher'] },
+    { key: 'finish', el: <Finisher finished={finished} passport={passport} slots={slots} />, watch: ['__finisher'] },
     { key: 'back', el: <BackCover /> },
   ]
 
@@ -317,7 +318,7 @@ function MedalPhoto({ sub, session, onChanged, onView, editable }) {
   )
 }
 
-function Slot({ k, sub, isNext, passport, canAdd, session, onChanged, onAdd, onView }) {
+function Slot({ k, sub, isNext, done, passport, canAdd, session, onChanged, onAdd, onView }) {
   const ok = isOk(sub), wait = isWait(sub)
   const prov = sub ? PROV[sub.province] : null
   const [ref, state] = useStampOnView(passport.id, sub?.province || `slot${k}`, ok)
@@ -328,7 +329,12 @@ function Slot({ k, sub, isNext, passport, canAdd, session, onChanged, onAdd, onV
     <div className="slot">
       <div className="slot-head">
         <h3>{prov ? prov.name.toUpperCase() : `STAMP ${no}`}</h3>
-        <span>STAMP {no} / 09</span>
+        {ok ? (
+          <ShareStamp className="slot-share" label="Share" card={{
+            kind: 'stamp', province: prov.name, stampSrc: stampUrl(prov.slug), raceName: sub.race_name,
+            raceDate: fmtDate(sub.race_date), distanceM: sub.distance_m, finishTime: fmtTime(sub.finish_seconds), count: done,
+          }} />
+        ) : <span>STAMP {no} / 09</span>}
       </div>
       <div className="slot-body">
         <div className={`stamp-box ${sub ? 'has' : ''}`} ref={ref}>
@@ -374,7 +380,9 @@ function StampPage({ first, slots, ...rest }) {
   )
 }
 
-function Finisher({ finished, passport }) {
+const monthsBetween = (a, b) => (a && b ? Math.max(1, Math.round((new Date(b) - new Date(a)) / (30.44 * 864e5))) : null)
+
+function Finisher({ finished, passport, slots }) {
   const [ref, state] = useStampOnView(passport.id, '__finisher', finished)
   return (
     <div className="paper finisher-page">
@@ -388,6 +396,13 @@ function Finisher({ finished, passport }) {
       </div>
       <p className="ran">I ran the beloved country</p>
       <div className="sign"><span>{finished ? passport.name_on_passport : ''}</span><small>Runner</small></div>
+      {finished && (
+        <ShareStamp className="finisher-share" card={{
+          kind: 'finisher', stampSrc: stampUrl('finisher'), races: 9,
+          totalKm: slots.filter(isOk).reduce((t, s) => t + s.distance_m, 0) / 1000,
+          months: monthsBetween(passport.issued_at, passport.completed_at),
+        }} />
+      )}
       <p className="fine center">{finished ? `Completed ${fmtDate(passport.completed_at)}. Your printed finisher passport is on its way.` : 'Finishers receive this passport in print, with all nine races filled in.'}</p>
     </div>
   )

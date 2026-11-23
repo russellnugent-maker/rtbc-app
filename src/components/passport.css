@@ -230,3 +230,17 @@
   .back-frame:has(.partner-card.ynm) .qr { width: 17%; margin-top: 6px; }
   .back-frame:has(.partner-card.ynm) .partner-card p { font-size: 9.5px; }
 }
+
+/* Share a verified stamp (to-do #97) */
+.share-btn { display: inline-flex; align-items: center; gap: 4px; border: 0; cursor: pointer; font: 700 11px/1 var(--body); letter-spacing: .06em; }
+.share-btn span { font: inherit; letter-spacing: 0; color: inherit; }
+.slot-head .share-btn.slot-share { align-self: center; background: #123A2C; color: #F4ECD9; border-radius: 999px; padding: 5px 10px; font-size: 10px; }
+.share-btn.finisher-share { align-self: center; margin: 2px auto 8px; background: #123A2C; color: #F4ECD9; border-radius: 10px; padding: 10px 18px; font-size: 13px; box-shadow: 0 0 0 3px #D2B27066; }
+.share-sheet .sheet-head small { display: block; }
+.share-seg { display: flex; background: #E9E0CB; border-radius: 10px; padding: 3px; margin: 8px 0 12px; }
+.share-seg button { flex: 1; border: 0; background: none; padding: 8px; border-radius: 8px; font: 600 13px/1 var(--body); color: var(--ink); cursor: pointer; }
+.share-seg button.on { background: #fff; box-shadow: 0 1px 3px #0002; }
+.share-preview { display: grid; place-items: center; margin: 0 auto; background: #0B241B14; border-radius: 12px; }
+.share-preview.story { width: min(62%, 240px); aspect-ratio: 9 / 16; }
+.share-preview.square { width: min(80%, 300px); aspect-ratio: 1; }
+.share-preview img { width: 100%; height: 100%; object-fit: contain; border-radius: 10px; box-shadow: 0 6px 20px #0004; }

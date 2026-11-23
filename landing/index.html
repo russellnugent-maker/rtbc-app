@@ -89,6 +89,29 @@ section { padding-block: 64px; }
 .steps h3 { font-size: 15px; color: var(--forest); letter-spacing: .1em; text-transform: uppercase; }
 .steps p { font-size: 15px; color: var(--muted); }
 .costs { margin-top: 26px; font-size: 14px; color: var(--muted); }
+/* App Store badge: Apple's official artwork, unaltered, min 40px tall with clear space */
+.store-badge { display: inline-block; line-height: 0; border-radius: 9px; }
+.store-badge img { height: 48px; width: auto; }
+.hero .store-badge { margin-top: 6px; }
+.app-get { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 30px; }
+.app-get p { color: var(--muted); font-size: 14px; max-width: 46ch; }
+footer .store-badge img { height: 40px; width: auto; }
+.stores { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; gap: 30px 16px; padding-bottom: 22px; }
+.app-get .stores, footer .stores { justify-content: flex-start; }
+.hero .stores { margin-top: 0; }
+.hero .store-badge { margin-top: 0; }
+.store-badge.soon { position: relative; cursor: default; }
+.store-badge.soon small { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--orange); color: #1F2A24; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; line-height: 1; padding: 4px 7px; border-radius: 10px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.beta-link { color: var(--gold); font-size: 14px; font-weight: 600; text-underline-offset: 3px; }
+.beta-link:hover { color: #ECE0C4; }
+.beta { margin: -6px 0 34px; padding: 22px 24px; background: var(--paper); border: 1px solid var(--rule); border-left: 4px solid var(--orange); border-radius: 4px; max-width: 760px; scroll-margin-top: 84px; }
+.beta h3 { font-size: 18px; color: var(--forest); margin-bottom: 8px; }
+.beta p { color: var(--muted); font-size: 14px; }
+.beta ol { list-style: none; padding: 0; margin: 16px 0; display: flex; flex-wrap: wrap; gap: 14px 20px; }
+.beta li { display: flex; flex-direction: column; gap: 6px; }
+.beta li span { font-size: 13px; color: var(--muted); }
+.beta .btn { min-height: 42px; font-size: 13px; }
+.beta-note { font-size: 13px !important; }
 
 .pages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
 @media (max-width: 860px) { .pages { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -223,6 +246,8 @@ footer p { max-width: 60ch; }
       <a class="btn btn-solid" href="#register">Register your interest</a>
       <a class="btn btn-ghost" href="#how">How it works</a>
     </div>
+    <div class="stores"><a class="store-badge " href="https://apps.apple.com/app/id6835716723" target="_blank" rel="noopener"><img src="img/app-store-badge.svg" alt="Download Running Passport on the App Store" width="144" height="48"></a><span class="store-badge soon" role="img" aria-label="Google Play: coming soon"><img src="img/google-play-badge.png" alt="" width="161" height="48"><small>Coming soon</small></span></div>
+    <a class="beta-link" href="#beta">On Android? Become a beta tester</a>
     <img class="shot" src="img/hero.png" alt="The race passport: green cover beside an open spread with the Western Cape and Eastern Cape stamps applied" width="1600" height="843">
   </div>
 </header>
@@ -265,7 +290,20 @@ footer p { max-width: 60ch; }
       <div class="head">
         <span class="eyebrow">The race passport</span>
         <h2>On your phone for the journey, in print when you finish</h2>
-        <p>Your passport lives in the Run the Beloved Country web app, with your number, dates and stamps. Finish all nine provinces and we send you the printed edition: a forest-green booklet with your nine races, dates and times filled in.</p>
+        <p>Your passport lives in the Running Passport app and the Run the Beloved Country web app, with your number, dates and stamps. Finish all nine provinces and we send you the printed edition: a forest-green booklet with your nine races, dates and times filled in.</p>
+      </div>
+      <div class="app-get">
+        <div class="stores"><a class="store-badge " href="https://apps.apple.com/app/id6835716723" target="_blank" rel="noopener"><img src="img/app-store-badge.svg" alt="Download Running Passport on the App Store" width="144" height="48"></a><span class="store-badge soon" role="img" aria-label="Google Play: coming soon"><img src="img/google-play-badge.png" alt="" width="161" height="48"><small>Coming soon</small></span></div>
+        <p>Free on iPhone, with Android coming soon. Enter on this website, then sign in to the app with the same email to carry your passport on race day.</p>
+      </div>
+      <div class="beta" id="beta">
+        <h3>Become an Android beta tester</h3>
+        <p>Running Passport for Android is in testing on Google Play. Use the Google account on your Android phone for both steps.</p>
+        <ol>
+          <li><a class="btn btn-solid" href="https://groups.google.com/g/running-passport-testers" target="_blank" rel="noopener">1. Join the tester group</a><span>Tap “Join group”.</span></li>
+          <li><a class="btn btn-solid" href="https://play.google.com/apps/testing/com.energylab.passport" target="_blank" rel="noopener">2. Join the test</a><span>Tap “Become a tester”, then install from Google Play.</span></li>
+        </ol>
+        <p class="beta-note">Already registered your interest? You may already be on the list, so try step 2 first. Feedback to <a href="mailto:support@energylabapp.co.za">support@energylabapp.co.za</a>.</p>
       </div>
       <div class="pages">
         <figure><img class="page-img" src="img/cover.jpg" alt="Passport front cover" width="700" height="994" loading="lazy"><figcaption><b>The cover</b>Your passport for the whole journey.</figcaption></figure>
@@ -393,7 +431,8 @@ footer p { max-width: 60ch; }
 <footer>
   <div class="wrap">
     <img src="img/logo.png" alt="Energy Lab Athletic Company" width="476" height="360">
-    <p>Run the Beloved Country is an independent running challenge presented by Energy Lab Athletic Company · energylabapp.co.za. Details, artwork and dates may change before launch. The race passport is a running collectible and not an official travel document.</p>
+    <div class="stores"><a class="store-badge " href="https://apps.apple.com/app/id6835716723" target="_blank" rel="noopener"><img src="img/app-store-badge.svg" alt="Download Running Passport on the App Store" width="120" height="40"></a><span class="store-badge soon" role="img" aria-label="Google Play: coming soon"><img src="img/google-play-badge.png" alt="" width="134" height="40"><small>Coming soon</small></span></div>
+    <p>Run the Beloved Country is an independent running challenge presented by Energy Lab Athletic Company · energylabapp.co.za. Details, artwork and dates may change before launch. The race passport is a running collectible and not an official travel document. <a href="/rules/" style="color:inherit">Rules</a> · <a href="/terms/" style="color:inherit">Terms &amp; Conditions</a> · <a href="/privacy/" style="color:inherit">Privacy Policy</a></p>
   </div>
 </footer>
 

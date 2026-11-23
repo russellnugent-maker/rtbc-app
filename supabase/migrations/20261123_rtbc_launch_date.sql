@@ -1,5 +1,5 @@
 -- Early entries (Russell, 23 Nov 2026): entries open before launch, but every passport's
--- Challenge Window starts no earlier than launch day, 1 December 2026 (SAST).
+-- Challenge Window starts no earlier than launch day, 1 December 2026.
 -- issued_at drives everything else: the date shown on the identity page, expiry
 -- (issued_at + 24 months), and the earliest race date the proof form accepts.
 -- Passports already issued are unchanged.
@@ -8,7 +8,8 @@ returns public.rtbc_passports
 language plpgsql security definer set search_path = public as $$
 declare
   v public.rtbc_passports;
-  v_start timestamptz := greatest(now(), timestamptz '2026-12-01 00:00:00+02');
+  -- Midnight UTC (02:00 SAST) so the date part reads 2026-12-01 everywhere.
+  v_start timestamptz := greatest(now(), timestamptz '2026-12-01 00:00:00+00');
 begin
   update public.rtbc_passports
      set status      = 'active',

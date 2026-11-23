@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- App Links: an emailed https://runthebelovedcountry.co.za/app/auth/callback link opens
+                 the app instead of the browser. Only that path: "Enter … on the website" and every
+                 other page must stay in the browser. Verified against
+                 landing/.well-known/assetlinks.json, which must carry the PLAY APP SIGNING sha-256
+                 (Play Console → Test and release → App integrity → App signing), not the upload
+                 key's. A wrong fingerprint fails silently: the link just opens the browser.
+                 Sign-in in the app stays on the 8-digit code; this is groundwork. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="runthebelovedcountry.co.za" />
+                <data android:pathPrefix="/app/auth/callback" />
+            </intent-filter>
+        </activity>
+
+        <!-- Photo uploads use the Camera plugin's "Take a photo / Choose from your photos" prompt
+             (src/lib/pickPhoto.js). No CAMERA permission: the plugin uses the system camera app's
+             intent, and declaring CAMERA would make Android demand it first. This entry lets
+             Google Play services install the photo picker on older Android 11–12 devices. -->
+        <!--suppress AndroidDomInspection -->
+        <service android:name="com.google.android.gms.metadata.ModuleDependencies"
+            android:enabled="false"
+            android:exported="false"
+            tools:ignore="MissingClass">
+            <intent-filter>
+                <action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES" />
+            </intent-filter>
+            <meta-data android:name="photopicker_activity:0:required" android:value="" />
+        </service>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

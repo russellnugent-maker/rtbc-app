@@ -3,9 +3,10 @@ import { useApp } from '../App.jsx'
 import { supabase } from '../lib/supabase.js'
 import { passportNo } from '../lib/provinces.js'
 import { friendlyAuthError } from '../lib/authErrors.js'
+import DeleteAccount from '../components/DeleteAccount.jsx'
 
-// /account (build spec §2 route map). Phase 1: who is signed in, change password, sign out.
-// Account deletion is phase 5 (a Netlify function with the service role, never the client).
+// /account (build spec §2 route map): who is signed in, change password, sign out, and (phase 5)
+// delete my account, through netlify/functions/rtbc-account (src/components/DeleteAccount.jsx).
 export default function Account() {
   const { session, profile, passport } = useApp()
   const [password, setPassword] = useState('')
@@ -50,6 +51,10 @@ export default function Account() {
         </form>
       </div>
       <button className="btn secondary block" onClick={() => supabase.auth.signOut()}>Sign out</button>
+      <DeleteAccount session={session} passport={passport} />
+      <p className="small muted" style={{ textAlign: 'center', marginTop: 18 }}>
+        <a href="https://runthebelovedcountry.co.za/privacy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+      </p>
     </>
   )
 }

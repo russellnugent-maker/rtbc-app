@@ -18,6 +18,10 @@ export const WEB_APP_URL = `${WEB_ORIGIN}/app/`
 
 /** Your Next Move's RTBC offer (another site: it does not change with our domain). Web only. */
 export const YNM_OFFER_URL = 'https://yournextmove.run/#/rtbc'
+// YNM in the app stores. The store app links here (never to the web offer or YNM's own checkout):
+// YNM sells its subscription in its own app, so the app store listing is the safe place to send people.
+export const YNM_APP_STORE_URL = 'https://apps.apple.com/za/app/id6794237930'
+export const YNM_PLAY_URL = 'https://play.google.com/store/apps/details?id=run.yournextmove.app'
 
 export const AUTH_CALLBACK_PATH = '/auth/callback'
 
@@ -33,3 +37,9 @@ export function authRedirectUrl({ native, origin, base = '/app/' }) {
   if (native) return webAppUrl(AUTH_CALLBACK_PATH)
   return `${origin}${base}${AUTH_CALLBACK_PATH.slice(1)}`
 }
+
+/**
+ * A Netlify function. The website calls its own origin (so previews and `vite dev` work); the
+ * store app has no server of its own, so it calls the production website.
+ */
+export const functionUrl = (name, { native = false } = {}) => `${native ? WEB_ORIGIN : ''}/.netlify/functions/${name}`

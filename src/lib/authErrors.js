@@ -19,10 +19,19 @@ export function friendlyAuthError(err) {
 
 /**
  * With shouldCreateUser: false, Supabase refuses a code or link for an email with no account.
- * The runner sees the same "on its way" notice either way, so the form never reveals who has an
- * account.
+ * The form tells the runner plainly (noAccountMessage) rather than showing "on its way" for an
+ * email that will never arrive. Decided 23 Nov 2026 after a runner got stuck waiting for a code:
+ * a clear answer matters more here than hiding which emails have accounts.
  */
 export const isNoAccountForOtp = (err) => /signups not allowed|user not found/i.test(String(err?.message || err || ''))
+
+/** What the runner sees when the email they typed has no account. `native`: the app, which can't create accounts. */
+export function noAccountMessage(email, native) {
+  const who = String(email || '').trim() || 'that email'
+  return native
+    ? `We couldn’t find an account for ${who}. Check the spelling, or use the email you use for Energy Lab or Your Next Move. No passport yet? Enter on the website first (link below).`
+    : `We couldn’t find an account for ${who}. Check the spelling, or use the email you use for Energy Lab or Your Next Move. New here? Create an account first.`
+}
 
 /**
  * A tapped auth link that failed comes back with the error in the URL fragment (or query), e.g.

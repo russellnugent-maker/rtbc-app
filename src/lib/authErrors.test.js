@@ -2,7 +2,7 @@
 // Runner-facing auth wording: no raw Supabase messages, codes or URLs ever reach the screen.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { friendlyAuthError, isNoAccountForOtp, linkError, normaliseCode, GENERIC } from './authErrors.js'
+import { friendlyAuthError, isNoAccountForOtp, noAccountMessage, linkError, normaliseCode, GENERIC } from './authErrors.js'
 import { OTP_LENGTH, codeLabel } from './authConfig.js'
 
 test('known failures get plain wording', () => {
@@ -18,9 +18,12 @@ test('anything unrecognised is the generic line, never the raw message', () => {
   assert.equal(friendlyAuthError(undefined), GENERIC)
 })
 
-test('a code asked for an email with no account looks the same as one that was sent', () => {
+test('a code asked for an email with no account says so plainly', () => {
   assert.equal(isNoAccountForOtp({ message: 'Signups not allowed for otp' }), true)
   assert.equal(isNoAccountForOtp({ message: 'Invalid login credentials' }), false)
+  assert.match(noAccountMessage(' theo@example.com ', true), /couldn’t find an account for theo@example\.com\. .*Enter on the website/)
+  assert.match(noAccountMessage('theo@example.com', false), /Create an account first/)
+  assert.doesNotMatch(noAccountMessage('', true), /for \./)
 })
 
 test('a failed auth link in the URL becomes a plain line', () => {

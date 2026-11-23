@@ -5,8 +5,11 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import { captureRef } from './lib/provinces.js'
+import { NATIVE } from './lib/platform.js'
 
 captureRef()
+// Website only: the Meta Pixel for the launch ads. Never part of the store app.
+if (!NATIVE) import('./lib/metaPixel.js').then((m) => m.initPixel())
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

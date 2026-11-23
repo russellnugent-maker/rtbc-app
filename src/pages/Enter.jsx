@@ -1,3 +1,4 @@
+import { trackCheckout } from '../lib/metaPixel.js'
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useApp } from '../App.jsx'
@@ -62,6 +63,7 @@ export default function Enter() {
       })
       const out = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(out.error || 'Something went wrong. Please try again.')
+      trackCheckout()
       // Hand over to PayFast with an auto-submitting form
       const f = document.createElement('form')
       f.method = 'POST'; f.action = out.payfast_url

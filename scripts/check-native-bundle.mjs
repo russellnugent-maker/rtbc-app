@@ -22,6 +22,7 @@ const ABSENT_IN_NATIVE = [
   ['magic link', 'Email me a sign-in link'],
   ['entry checkout', 'rtbc-entry'],
   ['review queue', 'Open certificate again'],
+  ['Meta Pixel', 'connect.facebook.net'],
 ]
 const PRESENT_IN_NATIVE = [
   ['email code sign-in', '-digit code'],

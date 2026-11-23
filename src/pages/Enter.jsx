@@ -4,7 +4,7 @@ import { useApp } from '../App.jsx'
 import { getRef } from '../lib/provinces.js'
 import { rand, entryCharityLead, BINAH_URL, BINAH_NAME } from '../lib/partners.js'
 
-export const TERMS_VERSION = '2026-11-draft'
+export const TERMS_VERSION = '2026-12-01'
 
 const ageOn = (dob, on = new Date()) => {
   const d = new Date(dob)

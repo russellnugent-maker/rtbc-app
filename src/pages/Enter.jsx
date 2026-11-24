@@ -1,4 +1,5 @@
 import { trackCheckout } from '../lib/metaPixel.js'
+import { beforeLaunch, LAUNCH_LABEL } from '../lib/launch.js'
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useApp } from '../App.jsx'
@@ -115,6 +116,9 @@ export default function Enter() {
         {error && <div className="error">{error}</div>}
         <button className="btn block" style={{ marginTop: 10 }} disabled={busy}>{busy ? 'Opening PayFast…' : 'Continue to payment'}</button>
         <p className="hint center" style={{ marginTop: 10 }}>Secure payment by PayFast. Your passport is issued the moment payment is confirmed.</p>
+        {beforeLaunch() && (
+          <p className="hint center" style={{ marginTop: 6 }}><strong>Entering early?</strong> Passports bought before {LAUNCH_LABEL} are dated {LAUNCH_LABEL}, so your 24 months, and the races that count, start then.</p>
+        )}
       </form>
       <p className="center small"><Link to="/">Back</Link></p>
     </>

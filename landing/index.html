@@ -10,7 +10,7 @@
 <meta property="og:image" content="https://runthebelovedcountry.co.za/img/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The nine Run the Beloved Country province stamps. Entries open 1 December, R499.">
+<meta property="og:image:alt" content="The nine Run the Beloved Country province stamps. Entries open now, R365.">
 <meta property="og:url" content="https://runthebelovedcountry.co.za/">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:type" content="website">
@@ -239,7 +239,7 @@ footer p { max-width: 60ch; }
       <li><a href="#faq">FAQ</a></li>
     </ul>
     <a class="btn btn-ghost" href="/app/">Sign in</a>
-    <a class="btn btn-solid" href="#register">Register interest</a>
+    <a class="btn btn-solid" href="/app/enter">Enter now</a>
   </div>
 </nav>
 
@@ -251,9 +251,10 @@ footer p { max-width: 60ch; }
     <p class="strap">9 Provinces. 9 Races. One Beloved Country.</p>
     <p class="sub">Run one officially timed half marathon or marathon in every province of South Africa, and collect each province’s stamp in your own race passport.</p>
     <div class="ctas">
-      <a class="btn btn-solid" href="#register">Register your interest</a>
+      <a class="btn btn-solid" href="/app/enter">Enter now · R365</a>
       <a class="btn btn-ghost" href="#how">How it works</a>
     </div>
+    <p class="sub" style="margin-top:14px;font-size:15px">Entries are open. Passports are valid from 1 December 2026: enter early and your 24 months start on launch day.</p>
     <div class="stores"><a class="store-badge " href="https://apps.apple.com/app/id6835716723" target="_blank" rel="noopener"><img src="img/app-store-badge.svg" alt="Download Running Passport on the App Store" width="144" height="48"></a><span class="store-badge soon" role="img" aria-label="Google Play: coming soon"><img src="img/google-play-badge.png" alt="" width="161" height="48"><small>Coming soon</small></span></div>
     <a class="beta-link" href="#beta">On Android? Become a beta tester</a>
     <img class="shot" src="img/hero.png" alt="The race passport: green cover beside an open spread with the Western Cape and Eastern Cape stamps applied" width="1600" height="843">
@@ -389,12 +390,12 @@ footer p { max-width: 60ch; }
       <div class="faq">
         <details><summary>Which races count?</summary><p>Any officially timed road half marathon (21.1 km), marathon (42.2 km) or road ultra held in the province, organised by any club or organiser. You choose the races. Trail races, virtual races and shorter distances don’t count.</p></details>
         <details><summary>Can I mix half marathons and marathons?</summary><p>Yes. Any mix of 21.1 and 42.2 km races counts, in any order.</p></details>
-        <details><summary>How long do I have?</summary><p>24 months from the date your passport is issued.</p></details>
+        <details><summary>How long do I have?</summary><p>24 months from the date your passport is issued. If you enter before 1 December 2026, your passport is dated 1 December 2026, so your 24 months start then.</p></details>
         <details><summary>Does my entry include race entries or travel?</summary><p>No. You enter each race directly with its organiser and arrange your own travel and accommodation. Your challenge entry covers your digital passport, result verification and, when you finish, your printed finisher passport.</p></details>
         <details><summary>Does part of my entry go to charity?</summary><p>Yes. R50 of every entry goes to our charity partner, the <a href="https://legacycenter.co.za/" target="_blank" rel="noopener">Binah Legacy Center</a>.</p></details>
         <details><summary>How are results verified?</summary><p>You add your official race result in the app, with a results link or finisher certificate. Once it is checked against the official results, usually within 7 days, that province’s stamp unlocks.</p></details>
         <details><summary>Is the race passport a real passport?</summary><p>No. It is an Energy Lab running challenge collectible, not an official travel or identity document.</p></details>
-        <details><summary>When can I enter?</summary><p>Entries open soon. Register your interest below and we’ll let you know first.</p></details>
+        <details><summary>When can I enter?</summary><p>Right now. <a href="/app/enter">Enter here</a>. Passports are valid from 1 December 2026, so races from that date count, and anyone who enters before then has a passport dated 1 December 2026.</p></details>
       </div>
     </div>
   </section>
@@ -402,9 +403,9 @@ footer p { max-width: 60ch; }
   <section class="cream" id="register">
     <div class="wrap register">
       <div class="head" style="margin: 0">
-        <span class="eyebrow">Be the first to know</span>
-        <h2>Register your interest</h2>
-        <p>Leave your details and we’ll email you when entries open. No payment, no commitment.</p>
+        <span class="eyebrow">Not ready to enter yet?</span>
+        <h2>Get Challenge news</h2>
+        <p>Leave your details and we’ll keep you posted on race news and partner offers. No payment, no commitment. Ready now? <a href="/app/enter">Enter here</a>.</p>
       </div>
       <form id='interest-form' method='POST' name='rtbc-interest' data-netlify='true' netlify-honeypot='bot-field'>
         <input type="hidden" name="form-name" value="rtbc-interest">
@@ -429,7 +430,7 @@ footer p { max-width: 60ch; }
           </label>
         </div>
         <label class="check" for="f-consent"><input id="f-consent" name="consent" type="checkbox" value="yes" required>I agree that Energy Lab Athletic Company may email me about Run the Beloved Country. I can unsubscribe at any time.</label>
-        <button class="btn btn-solid" type="submit" id="f-submit">Register interest</button>
+        <button class="btn btn-solid" type="submit" id="f-submit">Keep me posted</button>
         <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
       </form>
     </div>
@@ -469,7 +470,7 @@ footer p { max-width: 60ch; }
         if (!r.ok) throw new Error(r.status);
         form.reset();
         msg.className = 'form-msg ok';
-        msg.textContent = 'Thanks, you’re on the list. We’ll email you when entries open.';
+        msg.textContent = 'Thanks, you’re on the list. We’ll keep you posted.';
       })
       .catch(function () {
         msg.className = 'form-msg err';

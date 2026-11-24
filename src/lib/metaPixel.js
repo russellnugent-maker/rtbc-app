@@ -29,7 +29,7 @@ export function track(event, params) {
   try { load()('track', event, params) } catch { /* never let tracking break the page */ }
 }
 
-const ENTRY = { value: 499, currency: 'ZAR' }
+const ENTRY = { value: 365, currency: 'ZAR' }
 
 /** On app start: a page view, and a Purchase when PayFast sends the runner back after paying. */
 export function initPixel() {

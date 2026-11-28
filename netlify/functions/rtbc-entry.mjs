@@ -24,11 +24,6 @@ export default async (req) => {
   }
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
-  const merchantId = Netlify.env.get('PAYFAST_MERCHANT_ID')
-  const merchantKey = Netlify.env.get('PAYFAST_MERCHANT_KEY')
-  if (!Number.isInteger(fee) || fee <= 0 || !merchantId || !merchantKey)
-    return json({ error: 'Entries open soon. We’ll email you the moment they do.' }, 503)
-
   const sb = createClient(
     Netlify.env.get('SUPABASE_URL') || Netlify.env.get('VITE_SUPABASE_URL'),
     Netlify.env.get('SUPABASE_SERVICE_ROLE_KEY'),
@@ -41,16 +36,32 @@ export default async (req) => {
   const user = u.user
   if (!user.email_confirmed_at) return json({ error: 'Please confirm your email address first.' }, 403)
 
-  // While PayFast is in sandbox (test money), only listed test accounts may enter,
-  // so nobody can get a real passport with a fake payment.
-  if (Netlify.env.get('PAYFAST_SANDBOX') === 'true') {
-    const testers = (Netlify.env.get('RTBC_TEST_EMAILS') || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean)
-    if (!testers.includes(String(user.email).toLowerCase()))
-      return json({ error: 'Entries open soon. We’ll email you the moment they do.' }, 503)
-  }
-
   let b
   try { b = await req.json() } catch { return json({ error: 'Bad request' }, 400) }
+
+  // Comp (free-entry) code: checked here, redeemed below after the entry is saved.
+  // A comp entry pays nothing, so the PayFast and sandbox gates below don't apply to it.
+  const comp = String(b.comp_code || '').trim().toUpperCase() || null
+  if (comp) {
+    if (!/^[A-Z0-9-]{3,40}$/.test(comp)) return json({ error: 'That code isn’t valid.' }, 400)
+    const { data: c } = await sb.from('rtbc_comp_codes').select('active, uses, max_uses, expires_at').eq('code', comp).maybeSingle()
+    if (!c || !c.active) return json({ error: 'That code isn’t valid.' }, 400)
+    if (c.expires_at && new Date(c.expires_at) < new Date()) return json({ error: 'That code has expired.' }, 400)
+    if (c.uses >= c.max_uses) return json({ error: 'That code has already been used.' }, 400)
+  } else {
+    const merchantId = Netlify.env.get('PAYFAST_MERCHANT_ID')
+    const merchantKey = Netlify.env.get('PAYFAST_MERCHANT_KEY')
+    if (!Number.isInteger(fee) || fee <= 0 || !merchantId || !merchantKey)
+      return json({ error: 'Entries open soon. We’ll email you the moment they do.' }, 503)
+
+    // While PayFast is in sandbox (test money), only listed test accounts may enter,
+    // so nobody can get a real passport with a fake payment.
+    if (Netlify.env.get('PAYFAST_SANDBOX') === 'true') {
+      const testers = (Netlify.env.get('RTBC_TEST_EMAILS') || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean)
+      if (!testers.includes(String(user.email).toLowerCase()))
+        return json({ error: 'Entries open soon. We’ll email you the moment they do.' }, 503)
+    }
+  }
 
   const name = String(b.name_on_passport || '').trim()
   const dob = String(b.date_of_birth || '')
@@ -71,7 +82,7 @@ export default async (req) => {
   const row = {
     user_id: user.id, name_on_passport: name, date_of_birth: dob,
     guardian_name: gName, guardian_email: gEmail, guardian_consent_at: minor ? now : null,
-    terms_version: terms, terms_accepted_at: now, entry_fee_cents: fee,
+    terms_version: terms, terms_accepted_at: now, entry_fee_cents: comp ? 0 : fee,
     referral_code: ref, leaderboard_consent: b.leaderboard_consent === true,
   }
 
@@ -90,6 +101,20 @@ export default async (req) => {
     passportId = data.id
   }
 
+  if (comp) {
+    const { data: act, error: compErr } = await sb.rpc('rtbc_redeem_comp_code', { p_code: comp, p_passport_id: passportId, p_user: user.id })
+    if (compErr) {
+      const m = compErr.message || ''
+      const msg = m.includes('code_used') ? 'That code has already been used.'
+        : m.includes('code_expired') ? 'That code has expired.'
+        : m.includes('invalid_code') ? 'That code isn’t valid.' : 'Could not apply your code.'
+      return json({ error: msg }, 400)
+    }
+    return json({ comp: true, passport_no: act?.passport_no ?? null })
+  }
+
+  const merchantId = Netlify.env.get('PAYFAST_MERCHANT_ID')
+  const merchantKey = Netlify.env.get('PAYFAST_MERCHANT_KEY')
   const origin = new URL(req.url).origin
   const [first, ...rest] = name.split(/\s+/)
   const pairs = [

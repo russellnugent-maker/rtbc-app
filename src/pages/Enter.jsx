@@ -121,17 +121,16 @@ export default function Enter() {
         </div>
 
         {showCode ? (
-          <div data-comp-code>
-            <label htmlFor="cc">Entry code</label>
-            <input id="cc" type="text" autoCapitalize="characters" autoComplete="off" maxLength={40}
-              value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. ABC123" />
+          <div data-comp-code className="card" style={{ background: '#F3E9D2', marginTop: 14 }}>
+            <label htmlFor="cc" style={{ fontSize: 17, fontWeight: 700, marginTop: 0 }}>Your entry code</label>
+            <input id="cc" type="text" autoCapitalize="characters" autoComplete="off" maxLength={40} autoFocus
+              value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. ABC123"
+              style={{ fontSize: 20, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', padding: '12px 14px' }} />
           </div>
         ) : (
-          <p className="small" style={{ marginTop: 10 }}>
-            <button type="button" className="linkish" onClick={() => setShowCode(true)}
-              style={{ background: 'none', border: 0, padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}>
-              Have an entry code?</button>
-          </p>
+          <button type="button" className="btn secondary block" data-comp-toggle onClick={() => setShowCode(true)}
+            style={{ marginTop: 14, fontSize: 17, minHeight: 52 }}>
+            Have an entry code? Tap here</button>
         )}
 
         {error && <div className="error">{error}</div>}

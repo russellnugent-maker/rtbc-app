@@ -27,6 +27,10 @@ export default function Enter() {
   const [health, setHealth] = useState(false)
   const [board, setBoard] = useState(false)
   const [busy, setBusy] = useState(false)
+  // Comp (free-entry) code, e.g. for ambassadors. Hidden behind a link so paying runners aren't distracted.
+  const [showCode, setShowCode] = useState(false)
+  const [code, setCode] = useState('')
+  const comp = code.trim().toUpperCase()
   const [error, setError] = useState('')
   // The fee as the server charges it (rtbc-entry GET); null until known or if entries aren't open.
   const [feeCents, setFeeCents] = useState(null)
@@ -60,10 +64,13 @@ export default function Enter() {
           guardian_name: minor ? gName.trim() : null, guardian_email: minor ? gEmail.trim() : null,
           guardian_consent: minor ? gConsent : false,
           terms_version: TERMS_VERSION, leaderboard_consent: board, referral_code: getRef(),
+          comp_code: comp || null,
         }),
       })
       const out = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(out.error || 'Something went wrong. Please try again.')
+      // Comp code accepted: the passport is already active, so reload into it (no PayFast).
+      if (out.comp) { window.location.assign('/app/?entered=comp'); return }
       trackCheckout()
       // Hand over to PayFast with an auto-submitting form
       const f = document.createElement('form')
@@ -113,9 +120,26 @@ export default function Enter() {
           </p>
         </div>
 
+        {showCode ? (
+          <div data-comp-code>
+            <label htmlFor="cc">Entry code</label>
+            <input id="cc" type="text" autoCapitalize="characters" autoComplete="off" maxLength={40}
+              value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. ABC123" />
+          </div>
+        ) : (
+          <p className="small" style={{ marginTop: 10 }}>
+            <button type="button" className="linkish" onClick={() => setShowCode(true)}
+              style={{ background: 'none', border: 0, padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}>
+              Have an entry code?</button>
+          </p>
+        )}
+
         {error && <div className="error">{error}</div>}
-        <button className="btn block" style={{ marginTop: 10 }} disabled={busy}>{busy ? 'Opening PayFast…' : 'Continue to payment'}</button>
-        <p className="hint center" style={{ marginTop: 10 }}>Secure payment by PayFast. Your passport is issued the moment payment is confirmed.</p>
+        <button className="btn block" style={{ marginTop: 10 }} disabled={busy}>
+          {comp ? (busy ? 'Checking code…' : 'Enter with code') : (busy ? 'Opening PayFast…' : 'Continue to payment')}</button>
+        {comp
+          ? <p className="hint center" style={{ marginTop: 10 }}>Your entry is free with this code, and your passport is issued straight away.</p>
+          : <p className="hint center" style={{ marginTop: 10 }}>Secure payment by PayFast. Your passport is issued the moment payment is confirmed.</p>}
         {beforeLaunch() && (
           <p className="hint center" style={{ marginTop: 6 }}><strong>Entering early?</strong> Passports bought before {LAUNCH_LABEL} are dated {LAUNCH_LABEL}, so your 24 months, and the races that count, start then.</p>
         )}
